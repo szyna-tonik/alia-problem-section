@@ -4,419 +4,487 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>alia — Problem section prototype</title>
+<title>Alia — Problem section v2</title>
 
 <!--
 ================================================================================
-  alia — "Problem" section rework · scroll-driven three-beat prototype
-  Open and scroll. Everything is in this one file.
+  Alia — "Problem" section · scroll-driven three-beat prototype · v2
+  Open and scroll. One file, no dependencies, fonts embedded.
 ================================================================================
+
+  WHAT CHANGED FROM v1
+  --------------------
+  Every number below was measured off Figma frame 5215:868 at 1:1 (the export is
+  1496px wide, which is the artboard width), or read from the file's own
+  variables. Nothing here is estimated from a screenshot any more.
+
+  Real fonts, subset and inlined as variable woff2:
+    Switzer Variable      wght 100-900   ~17 KB
+    Geist Mono Variable   wght 100-900   ~12 KB
+  Switzer draws the whole product UI, exactly as the frame does. Geist Mono is
+  this prototype's own chrome only — controls, beat numbers, scaffold labels —
+  which matches how the file uses desktop/t-label/1-rg (Geist Mono Medium 14).
+
+  TOKENS, straight from the file's variables
+    c-black          #1D1D1D    ink for every piece of type
+    c-violet/500     #B99DF9    this section's ground
+    c-violet/600     #845CE0    the one accent that is allowed to be loud
+    c-violet/500 24% rgba       mention chips
+    c-black/8p       rgba(29,29,29,.08)   channel + APP pills
+    c-yellow/600     #D8D4BB    the thread panel's header bar
+    c-off-white      #F3F1E5    hero / scaffold band
+    c-white          #FFFFFF    every card
+
+  MEASURED GEOMETRY (px at 1.0x, i.e. exactly the frame)
+    thread panel            578 wide      notification card 480 wide
+    gap between cards       51            card heights      117 (2 lines),
+                                                            138 (3 lines)
+    card radius             6             card shadow       soft, low
+    panel padding-x         34            drift card pad    24
+    avatar                  40 x 40, radius 8    avatar gap  16-18
+    thread header bar       55 tall, c-yellow/600
+    inbox row               109 tall, tint #F4EFFE, 2px rule #EBE6F5
+    headline channel        662 wide — the two headlines' inner edges sit
+                            331 either side of centre, left one right-aligned,
+                            right one left-aligned. That is how the frame does
+                            it: they point inward at the artefact.
+
+  THE FEED (frame 5757:64599)
+    All seven cards, in that order, one below another in a single column —
+    Ines Duarte, Lucas Meyer, Omar Haddad, Bea Novak, Sofia Ruiz, Jane Okafor,
+    Tomas Lind — cast, channel pills (including the two on Ines and the padlock
+    on "Private channel") and copy verbatim. The inbox item is the eighth and
+    last element, so the noise scrolls past and the one that matters comes to
+    rest in the middle.
+
+    A single read head walks down the column at a steady pace. Every card is
+    75% entering, 100% crossing the middle between the two headlines, and back
+    to 75% as it fades. Falloff is a fraction of the section height, so cards
+    dissolve inside the section instead of being clipped by its edge:
+      SHRINK_R .38  ·  FADE_IN .16  ·  FADE_OUT .43
+
+    Then it runs in three phases across beat 1's own u:
+      0    -> .70   the feed scrolls, Tomas Lind ends up centred
+      .70  -> .85   the seven cards gather into the deck from frame 5757:63093
+                    — front card full width at the bottom, each layer behind it
+                    20px higher and 10px narrower, measured off that frame
+      .87  -> 1     the Misalignment card rises out of the deck's front card and
+                    settles in the middle while the deck fades out
+    The deck fades as one group, not card by card: fading the layers
+    individually made the stack see-through and exposed the content that the
+    layers in front are there to cover.
+
+    Beat 1 gets a long run-up (LEAD_IN 1.75 beats) because it has a whole feed
+    to carry past the middle, and it holds full opacity through it — there is
+    nothing behind it to cross-fade from. The feed ends up moving about 1.2x
+    the scroll speed, which is readable. Pace it with Scroll / beat.
+
+  THE HEADLINES
+    Vertical only, no sideways travel. They also move further than the artefact
+    (headShift on top of drift), so an outgoing pair clears the incoming one
+    with real space between them. Both knobs are in the bar. Beat 1 does not
+    pre-offset over its long run-up — it arrives with the page and only moves on
+    the way out — otherwise the headlines would sit 340px low through the feed.
+
+    Both headlines sit flush against the artefact channel, which is where the
+    frame puts them (text edge at 331px either side of centre) and is also what
+    keeps "The misalignment" on one line.
+
+  MEASURED TYPE (Switzer, tracking as a ratio of size)
+    section headline   47.5 / 600 / -0.04em / lh 1.10
+    panel title        17   / 600 / -0.02em
+    panel room name    20   / 600 / -0.02em   (CS-tech)
+    message + item     16   / 400 / -0.02em / lh 23px
+    name               16   / 600 / -0.02em
+    timestamp, meta,
+      "2 replies"      12.5 / 400 / -0.02em / #88858D
+    channel pill       12   / 500 / -0.01em   (inbox rows only — the thread
+                       rows in the frame carry no channel pill, so neither
+                       does beat 3. Say the word and they come back.)
 
   WHAT YOU CAN TWEAK
   ------------------
-  Two ways: the CONTROLS bar (click "Controls" bottom-right — it opens along the
-  bottom edge so it never covers the centre of the section, and it remembers your
-  settings), or the CONFIG object at the top of the script block at the end of
-  this file.
+  The CONTROLS bar (bottom right; it opens along the bottom edge so it never
+  covers the middle of the section), or the CONFIG object in the script below.
 
-    artefactScale     1.0 = the product-UI sizing already used on index.html
-                      (15px message text, 36px avatar, 460px card). Default 1.4.
-    artefactWidth     Artefact column width, in units of the artefact's own em.
-                      46 = 460px at scale 1.0 — the Figma card width exactly.
-                      On-screen px = artefactWidth x artefactScale x 10.
-    sectionVH         Section height as % of viewport. 100 = full height.
-                      Set ~84 to reproduce the current 840px-in-1000px framing.
-    overlap           How much of the previous/next beat is visible during the
-                      transition. 0 = each beat clears the stage before the next
-                      arrives; 1 = long crossfade with both on screen. Default .60,
-                      which is the lowest value with no blank frame between beats.
-    scrollPerBeat     Viewport-heights of scrolling per beat. This is the PACING
-                      knob. 1.25 = calm, 0.8 = brisk, 2.0 = very slow.
-    drift             px of vertical travel a beat makes as it passes through.
-    converge          px the two side headlines converge inward (logo motif).
-    variant           Beat 3: 'A' = the two human replies · 'B' = Inbox card
-                      marked Resolved. Toggle top-left, or press V.
-    bg                Section ground: 'violet' = #b99df9, what the Figma frame
-                      actually uses · 'paper' = #f3f1e5, what the brief described.
-                      This changes the answer to "do they look lost" more than any
-                      other single setting, so it is a toggle, not a decision.
+    artefactScale   1.00 = the frame at 1:1. Opens here on purpose — check the
+                    redraw against Figma first, then push it up. The brief's
+                    1.4-1.6 range is still one drag away.
+    artefactWidth   Panel width in px at 1.0x. 578 = the frame.
+    sectionVH       Section height, % of viewport.
+    overlap         0 = each beat clears before the next arrives · 1 = long
+                    crossfade. Default .60, the lowest value with no blank frame.
+    scrollPerBeat   Pacing, in viewport-heights per beat.
+    drift           px a beat travels vertically as it passes.
+    headShift       px the headlines travel vertically, on top of drift —
+                    the gap between the outgoing and the incoming pair.
+    bg              'violet' = #B99DF9 as in the frame · 'paper' = #F3F1E5.
+    variant         Beat 3: 'A' = the two human replies · 'B' = inbox card,
+                    marked Resolved.
 
-  KEYS      V = swap Beat 3 variant · B = swap the section ground
-            C = show/hide the controls bar
-            1 2 3 = jump to a beat (the ticks at the bottom are clickable too)
-            (the three ticks at the bottom of the section are also clickable)
+  KEYS   V variant · B ground · C controls · 1 2 3 jump to a beat
 
-  CONTINUITY WITH THE FIGMA  (frame 5215:868)
-  -------------------------------------------
-  Everything factual in here is taken from that frame, because two things in the
-  brief did not survive checking against it:
+  THE STORY, AND WHOSE WORDS ARE WHOSE
+  ------------------------------------
+  Beat 1  seven Slack notifications scroll past; the inbox item comes to rest
+  Beat 2  Alia posts in CS-tech, naming the two people who can settle it
+  Beat 3  John 9:34, then Jane 9:41. Alia is not in the room for the close.
 
-  · "Yes, of course! We need to get this shipped asap." is JANE's line, Thu 9:41.
-    The brief gave it to John. John's own reply is Thu 9:34: "Oh I wasn't aware of
-    that! @Jane (CS) could you give me more context..."
-  · "2 replies" means exactly two — John 9:34 and Jane 9:41. Beat 3 now shows both.
+  "Yes, of course! We need to get this shipped asap." is Jane's line at 9:41.
+  John's is 9:34. Alia's question is the frame's wording, not the brief's
+  shorter rewrite — see the comment beside it if you want to swap that.
 
-  Also aligned to the frame: Alia is capitalised; the avatar carries the dark
-  converging-lines mark on a lavender tile; the drift cards are the frame's own
-  four (Lucas Meyer / Omar Haddad / Bea Novak / Sofia Ruiz) with avatar, name and
-  channel pill; colours are sampled off the frame, not off index.html.
-
-  STILL DIVERGENT — your call
-  · Alia's Beat 2 line uses the frame's wording. The brief's tightened version is
-    the better line, but it would then differ from section 02 of the same page.
-    See the comment next to it in Beat 2.
-  · The frame's Coordination Inbox log is dated Wed Aug 12 / Thu Aug 13 / Tue Aug 13
-    — John answers before Jane asks, and Alia resolves it the day before. The
-    thread's Thu 9:20 / 9:34 / 9:41 is the one that holds together, so Beat 3 uses
-    that. The inbox dates need fixing in Figma either way.
-  · The frame calls the two people "John" and "Jane" in the thread and "John
-    Baptista" and "Jane Okafor" in the inbox. Beat 3 uses the full names.
-
-  OTHER NOTES
-  · All three beats sit on the same white card, as the frame's panels do. What
-    separates them is what is inside: an inbox item, Alia asking, two people
-    answering. The original fault was beats 2 and 3 being the SAME panel one row
-    apart — different contents in the same container fixes that; an entirely
-    different container per beat was never the requirement.
-  · Anything on a white card takes the on-white treatment — cool channel pills,
-    violet mention highlight, Figma's lavender tile for Alia — whatever the
-    ground is set to. So the Ground toggle only repaints the section itself.
-  · Artefact internals are sized in em, so artefactScale scales the whole UI
-    proportionally — one control, no relayout surprises.
-  · Nothing in here watches anyone: no eyes, lenses, radar, org charts, node
-    graphs, square grids, dashboards or metrics. Beat 1's convergence is movement
-    toward a meeting point — the logo motif — and it dissolves into one card.
-  · alia only ever surfaces and asks. In Variant A a person closes it. Variant B
-    is built exactly as briefed so you can compare, but see the note in the
-    handoff: a `Resolved` badge is alia's UI reporting a state, which is the
-    thing the client flagged. Variant A is the safer read.
+  STILL OPEN IN FIGMA
+  · The Coordination Inbox log is dated Wed Aug 12 / Thu Aug 13 / Tue Aug 13:
+    John answers before Jane asks and Alia resolves it the day before. The
+    thread's 9:20 / 9:34 / 9:41 is the version that holds together.
+  · The thread calls them "John" and "Jane"; the inbox calls them "John
+    Baptista" and "Jane Okafor". This uses the full names.
 ================================================================================
 -->
 
 <style>
+  /* ---------------------------------------------------------------- fonts -- */
+  @font-face {
+    font-family: Switzer;
+    src: url(data:font/woff2;base64,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) format('woff2');
+    font-weight: 100 900; font-style: normal; font-display: block;
+  }
+  @font-face {
+    font-family: "Geist Mono";
+    src: url(data:font/woff2;base64,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) format('woff2');
+    font-weight: 100 900; font-style: normal; font-display: block;
+  }
+
   :root {
-    /* ---- sampled straight off the Figma frame 5215:868 ---- */
-    --ink: #191614;
-    --text: #2c2724;
-    --muted: #6d655c;
-    --line: #e4e0d4;
-    --paper: #f3f1e5;       /* the hero / scaffold band       */
-    --lavender: #b99df9;    /* THIS section's ground in Figma */
-    --surface: #ffffff;     /* cards are pure white on it     */
-    --wash: #efece2;
-    --chip-bg: #f0eff2;     /* channel pills — cool, for white  */
-    --alia-tile: #cdb8fb;   /* Alia's avatar tile, one step off the ground */
-    --mention-rgb: 255 255 255;  /* mention chip, on lavender */
-    --mention-a: 64%;
-    --accent: #7d5ba6;
-    --accent-ink: #6b4c90;
-    --mono-dim: #5f584f;
-    --mono-ink: #4a443d;
-    --section-bg: var(--lavender);
+    /* file variables, verbatim */
+    --ink: #1D1D1D;              /* c-black          */
+    --violet: #B99DF9;           /* c-violet/500     */
+    --violet-600: #845CE0;       /* c-violet/600     */
+    --khaki: #D8D4BB;            /* c-yellow/600     */
+    --paper: #F3F1E5;            /* c-off-white      */
+    --white: #FFFFFF;            /* c-white          */
+    --pill: rgba(29, 29, 29, .08);        /* c-black/8p          */
+    --mention: rgba(185, 157, 249, .24);  /* c-violet/500 24%    */
+    /* measured off the frame */
+    --muted: #88858D;            /* dates, timestamps, secondary */
+    --row-tint: #F4EFFE;         /* inbox row background         */
+    --row-rule: #EBE6F5;         /* inbox row separator          */
+    --hair: rgba(29, 29, 29, .07);        /* rules inside a panel */
 
-    --max: 1500px;
-    --gutter: clamp(22px, 3vw, 56px);
-    --ease: cubic-bezier(0.22, 1, 0.36, 1);
-    --sans: Aptos, "Geist", "Soehne", "SF Pro Display", -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif;
+    --sans: Switzer, -apple-system, "Helvetica Neue", Arial, sans-serif;
     --mono: "Geist Mono", "SF Mono", ui-monospace, monospace;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --gutter: clamp(20px, 3.5vw, 76px);
 
-    /* ---- driven by JS / the controls panel ---- */
-    --s: 1.4;              /* artefact scale */
-    --artw: 46;            /* artefact width, in artefact-em */
-    --em: calc(var(--s) * 10px);  /* 1 artefact-em in px */
-    --section-h: 100vh;    /* section height */
+    /* driven by JS */
+    --u: 1;                      /* artefact scale, 1 = frame at 1:1 */
+    --pw: 578;                   /* thread panel width, frame px     */
+    --nw: 480;                   /* notification / item card width   */
+    --em: calc(var(--u) * 10px); /* 1 artefact-em; em x 10 = frame px */
+    --section-h: 100vh;
+    --section-bg: var(--violet);
   }
 
   *, *::before, *::after { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
-    margin: 0; background: var(--paper); color: var(--text);
-    font-family: var(--sans); font-size: 16px; line-height: 1.5;
-    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.4;
+    font-feature-settings: "kern" 1; -webkit-font-smoothing: antialiased;
   }
 
-  /* ============ scaffolding above and below (placeholder, not design) ======= */
-  .scaffold { min-height: 74vh; display: grid; place-items: center; padding: 10vh var(--gutter); text-align: center; }
-  .scaffold .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--mono-dim); }
-  .scaffold p { margin: 18px auto 0; max-width: 30ch; font-size: clamp(19px, 2.2vw, 27px); line-height: 1.3; letter-spacing: -.025em; color: var(--muted); }
-  .cue { margin-top: 46px; display: inline-grid; justify-items: center; gap: 10px; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--mono-dim); }
-  .cue i { display: block; width: 1px; height: 46px; background: linear-gradient(180deg, var(--line), transparent); animation: cue 3.4s var(--ease) infinite; transform-origin: top; }
-  @keyframes cue { 0%, 100% { opacity: .35; transform: scaleY(.7); } 45% { opacity: 1; transform: scaleY(1); } }
-  .rule { height: 1px; background: var(--line); }
+  /* ------------------------------------------- scaffolding, not the design -- */
+  .scaffold { min-height: 76vh; display: grid; place-items: center; padding: 10vh var(--gutter); text-align: center; }
+  .scaffold .tag { font-family: var(--mono); font-weight: 500; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #6c675f; }
+  .scaffold p { margin: 20px auto 0; max-width: 26ch; font-size: clamp(24px, 2.6vw, 39px); font-weight: 600; line-height: 1.1; letter-spacing: -.04em; color: var(--ink); }
+  .cue { margin-top: 48px; display: inline-grid; justify-items: center; gap: 10px; font-family: var(--mono); font-weight: 500; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #6c675f; }
+  .cue i { display: block; width: 1px; height: 48px; background: linear-gradient(180deg, rgba(29,29,29,.3), transparent); animation: cue 3.4s var(--ease) infinite; transform-origin: top; }
+  @keyframes cue { 0%, 100% { opacity: .3; transform: scaleY(.7); } 45% { opacity: 1; transform: scaleY(1); } }
 
-  /* ============================ the three beats ============================ */
+  /* ============================== the section ============================== */
   #beats { position: relative; background: var(--section-bg); }
-  body[data-bg="paper"] { --section-bg: var(--paper); --chip-bg: #e9e5d7; --mention-rgb: 125 91 166; --mention-a: 26%; --alia-tile: var(--lavender); }
-  body[data-bg="paper"] #beats { box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line); }
-  #pin {
-    position: sticky; top: calc((100vh - var(--section-h)) / 2);
-    height: var(--section-h); overflow: hidden;
-  }
+  body[data-bg="paper"] { --section-bg: var(--paper); }
+  #pin { position: sticky; top: calc((100vh - var(--section-h)) / 2); height: var(--section-h); overflow: hidden; }
   .beat { position: absolute; inset: 0; display: grid; align-items: center; will-change: opacity, transform; }
   .beat-in {
-    width: 100%; max-width: var(--max); margin-inline: auto; padding-inline: var(--gutter);
-    display: grid; align-items: center; gap: clamp(18px, 3.2vw, 60px);
-    grid-template-columns: minmax(0, 1fr) calc(var(--artw) * var(--em)) minmax(0, 1fr);
+    width: 100%; max-width: 1700px; margin-inline: auto; padding-inline: var(--gutter);
+    display: grid; align-items: center;
+    /* 662 of 1496 — the frame's headline channel */
+    grid-template-columns: minmax(0, 1fr) 44.25% minmax(0, 1fr);
   }
   .hl {
-    font-size: clamp(25px, 2.9vw, 46px); line-height: 1.02; letter-spacing: -.032em;
-    font-weight: 500; color: var(--ink); will-change: transform; margin: 0;
-    text-wrap: balance;
+    margin: 0; font-size: clamp(27px, 3.175vw, 54px); font-weight: 600;
+    line-height: 1.1; letter-spacing: -.04em; color: var(--ink);
+    will-change: transform; text-wrap: balance;
   }
-  .hl.r { text-align: right; }
+  .hl.l { text-align: right; }
+  .hl.r { text-align: left; }
 
-  /* the artefact stage. everything inside is em-based off --s */
-  .stage {
-    position: relative; width: 100%; font-size: var(--em);
-    display: grid; place-items: center;
-  }
+  .stage { position: relative; font-size: var(--em); display: grid; place-items: center; justify-self: center;
+           width: calc(var(--pw) * var(--u) * 1px); max-width: 100%; }
 
-  /* ---------------------------- inbox card -------------------------------- */
-  .mcard {
-    width: 100%; background: var(--surface); border-radius: 1em;
-    padding: 1.8em 2em 2em; text-align: left;
-    box-shadow: 0 1.8em 4em -2.2em rgba(25, 22, 20, .3);
-    will-change: transform, opacity;
-  }
-  .badge {
-    display: inline-block; font-family: var(--mono); font-size: .95em;
-    letter-spacing: .085em; text-transform: uppercase; color: var(--accent-ink);
-    border: 1px solid var(--accent); border-radius: .3em; padding: .4em .75em;
-    margin-bottom: 1.2em;
-  }
-  .badge.done { color: var(--mono-ink); border-color: transparent; background: var(--chip-bg); }
-  .mcard .body {
-    font-size: 1.5em; line-height: 1.45; font-weight: 400;
-    letter-spacing: -.014em; color: var(--ink);
-  }
-
-  /* --------- drifting Slack notifications: avatar · name · channel --------- */
-  .ncard {
-    position: absolute; top: 50%; left: 50%; width: 30em;
-    background: var(--surface); border-radius: 1em; padding: 1.4em 1.6em;
-    text-align: left; box-shadow: 0 1.4em 3em -1.8em rgba(25, 22, 20, .28);
-    display: grid; grid-template-columns: 3.6em 1fr; gap: 1.2em; align-items: start;
-    will-change: transform, opacity;
-  }
-  /* on a white card: cool pills, violet mention highlight, Figma's lavender
-     tile for Alia — regardless of what the section ground is doing */
-  .mcard, .ncard { --chip-bg: #f0eff2; --mention-rgb: 125 91 166; --mention-a: 26%;
-                   --alia-tile: var(--lavender); }
-  .ncard .who { display: flex; align-items: center; gap: .8em; margin-bottom: .45em; flex-wrap: wrap; }
-  .ncard .txt { font-size: 1.45em; line-height: 1.42; letter-spacing: -.01em; color: var(--text); }
-
-  /* ------------------------------ messages -------------------------------- */
-  .msg { width: 100%; display: grid; grid-template-columns: 3.6em 1fr; gap: 1.2em; align-items: start; text-align: left; will-change: transform, opacity; }
-  .msg + .msg { margin-top: 1.6em; }
-  .av {
-    width: 3.6em; height: 3.6em; border-radius: .8em; overflow: hidden;
-    display: grid; place-items: center; background: var(--wash); flex: none;
-  }
+  /* ------------------------------------------------------ shared UI atoms -- */
+  .card { background: var(--white); border-radius: .6em; box-shadow: 0 1.6em 4em -2em rgba(29,29,20,.28), 0 .2em .6em -.4em rgba(29,29,20,.12); }
+  .av { width: 4em; height: 4em; border-radius: .8em; overflow: hidden; display: grid; place-items: center; flex: none; background: var(--pill); }
   .av img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .av.is-alia { background: var(--alia-tile); }
-  .av.is-alia svg { width: 68%; height: 68%; display: block; }
-  .mhd { display: flex; align-items: center; gap: .8em; margin-bottom: .45em; flex-wrap: wrap; }
-  .n { font-size: 1.5em; font-weight: 600; letter-spacing: -.012em; color: var(--ink); }
-  .ch { font-size: 1.2em; background: var(--chip-bg); color: var(--mono-ink); padding: .25em .6em; border-radius: .4em; white-space: nowrap; }
-  .app { font-family: var(--mono); font-size: .95em; letter-spacing: .08em; text-transform: uppercase; background: var(--chip-bg); color: var(--mono-ink); padding: .3em .55em; border-radius: .3em; }
-  .tm { font-family: var(--mono); font-size: 1.15em; color: var(--mono-dim); }
-  .say { font-size: 1.5em; line-height: 1.5; color: var(--text); letter-spacing: -.008em; }
-  .mn {
-    color: var(--accent-ink); font-weight: 500; white-space: nowrap;
-    padding: .1em .28em; margin: 0 -.28em; border-radius: .2em;
-    background: rgb(var(--mention-rgb) / calc(var(--mention-a) * var(--chip, 1)));
-    -webkit-box-decoration-break: clone; box-decoration-break: clone;
-  }
+  .av.alia { background: var(--violet); }
+  .av.alia svg { width: 45%; height: 45%; display: block; }
+  .nm   { font-size: 1.6em; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
+  /* measured: 21px tall, ~4.5px inline padding, 12px text at lh 1.2 */
+  .chip { font-size: 1.2em; font-weight: 500; letter-spacing: -.01em; line-height: 1.2; color: var(--ink);
+          background: var(--pill); padding: .28em .26em; border-radius: .42em; white-space: nowrap;
+          display: inline-flex; align-items: center; gap: .3em; }
+  .lockwrap { display: inline-flex; }
+  .lock { width: .72em; height: 1em; display: block; }
+  .chip.app { text-transform: uppercase; letter-spacing: .06em; font-size: 1em; }
+  .chip.violet { background: var(--mention); color: var(--violet-600); }
+  .ts   { font-size: 1.25em; font-weight: 400; letter-spacing: -.02em; color: var(--muted); }
+  .body { font-size: 1.6em; font-weight: 400; letter-spacing: -.02em; line-height: 1.3125; color: var(--ink); }   /* 21px */
+  .item .body { line-height: 1.4375; }   /* the inbox item's leading is looser */
+  .mn   { color: var(--ink); background: rgb(185 157 249 / calc(24% * var(--chip-a, 1)));
+          padding: .1em .26em; margin: 0 -.26em; border-radius: .28em;
+          -webkit-box-decoration-break: clone; box-decoration-break: clone; white-space: nowrap; }
 
-  /* thin "2 replies" divider */
-  .divider { display: flex; align-items: center; gap: 1.1em; width: 100%; margin-bottom: 1.6em; will-change: opacity; }
-  .divider .lbl { font-family: var(--mono); font-size: 1.15em; letter-spacing: .05em; color: var(--accent-ink); white-space: nowrap; }
-  .divider .ln { height: 1px; background: rgba(25, 22, 20, .16); flex: 1; }
+  /* --------------------------------------- beat 1 · drifting notifications -- */
+  .col {
+    position: absolute; top: 50%; left: 50%; width: calc(var(--nw) * var(--u) * 1px);
+    display: grid; gap: 5.1em;              /* 51px between cards, as measured */
+    will-change: transform;
+  }
+  .col > * { transform-origin: 50% 50%; will-change: transform, opacity; }
+  .note { padding: 2.4em; display: grid; grid-template-columns: 4em 1fr; gap: 1.8em;
+          align-items: start; text-align: left; }
+  .note .who { display: flex; align-items: center; gap: .7em; margin-bottom: .6em; flex-wrap: wrap; }
+  .note .nm { line-height: 1.2; }
+  .note .body { margin: 0; }
+
+  /* --------------------------------------------- beat 1 · the inbox item --- */
+  .item { width: calc(var(--nw) * var(--u) * 1px); max-width: 100%;
+          padding: 2.4em 2.4em 2.6em; text-align: left; will-change: transform, opacity; }
+  .item .chip { margin-bottom: 1.4em; }
+  .item .body { margin: 0; }
+  /* beat 1's item is driven out of the deck, so it is placed by JS */
+  .item.emerge { position: absolute; left: 50%; top: 50%; }
+
+  /* ------------------------------------------ beats 2 + 3 · thread panel --- */
+  .panel { width: 100%; overflow: hidden; text-align: left; will-change: transform, opacity; }
+  .phead {
+    height: 5.5em; padding-inline: 3.4em; background: var(--khaki);
+    display: flex; align-items: center; gap: 1.2em;
+  }
+  .phead .rm { font-size: 2em; font-weight: 600; letter-spacing: -.02em; }
+  .phead .mt { margin-left: auto; font-size: 1.25em; font-weight: 400; letter-spacing: -.02em; color: rgba(29,29,29,.55); }
+  .pbody { padding: 2.4em 3.4em 2.6em; }
+  .msg { display: grid; grid-template-columns: 4em 1fr; gap: 1.8em; align-items: start; will-change: opacity; }
+  .msg .hd { display: flex; align-items: center; gap: .9em; margin-bottom: .5em; flex-wrap: wrap; }
+  .msg .body { margin: 0; }
+  .rule { height: 1px; background: var(--hair); margin: 2.2em -3.4em; }
+  /* label plus a rule to its right, same hairline as the one between messages */
+  .replies { display: flex; align-items: center; gap: 1.2em; margin: 0 -3.4em 1.5em 0; }
+  .replies b { font-size: 1.25em; font-weight: 400; letter-spacing: -.02em; color: var(--muted); }
+  .replies i { flex: 1; height: 1px; background: var(--hair); }
+  .msg + .rule { margin-top: 2.4em; }
+
   .b3 { width: 100%; }
   body[data-variant="A"] .v-b, body[data-variant="B"] .v-a { display: none; }
 
-  /* ------------------------------ beat ticks ------------------------------- */
-  .ticks { position: absolute; left: 50%; bottom: clamp(20px, 3.4vh, 40px); transform: translateX(-50%); display: flex; gap: 12px; z-index: 4; }
-  .ticks button {
-    appearance: none; background: none; border: 0; padding: 10px 0 0; margin: 0; cursor: pointer;
-    font-family: var(--mono); font-size: 9px; letter-spacing: .1em; color: var(--mono-dim);
-    display: grid; justify-items: center; gap: 7px; opacity: .5; transition: opacity .5s var(--ease);
-  }
-  .ticks button i { display: block; width: 26px; height: 1px; background: var(--ink); transition: background .5s var(--ease), width .5s var(--ease); }
+  /* ------------------------------------------------------------- ticks ----- */
+  .ticks { position: absolute; left: 50%; bottom: clamp(20px, 3.4vh, 42px); transform: translateX(-50%); display: flex; gap: 14px; z-index: 4; }
+  .ticks button { appearance: none; background: none; border: 0; margin: 0; padding: 10px 0 0; cursor: pointer;
+    font-family: var(--mono); font-weight: 500; font-size: 10px; letter-spacing: .1em; color: rgba(29,29,29,.75);
+    display: grid; justify-items: center; gap: 8px; opacity: .45; transition: opacity .5s var(--ease); }
+  .ticks button i { display: block; width: 28px; height: 1px; background: var(--ink); transition: background .5s var(--ease), width .5s var(--ease); }
   .ticks button[aria-current="true"] { opacity: 1; }
-  .ticks button[aria-current="true"] i { background: var(--accent); width: 40px; }
+  .ticks button[aria-current="true"] i { background: var(--violet-600); width: 44px; }
 
-  /* ============================== controls =================================
-     Both live at the edges: the variant toggle top-left, the knobs in a bar
-     along the bottom. Nothing ever sits over the centre band, because that is
-     the band you are trying to judge. */
-  .variant-toggle {
-    position: fixed; left: 16px; top: 16px; z-index: 20;
-    display: flex; align-items: center; gap: 8px;
-    background: var(--surface); border: 1px solid var(--line); border-radius: 3px;
-    padding: 6px 7px 6px 11px; box-shadow: 0 10px 26px -20px rgba(25, 22, 20, .4);
-    font-family: var(--mono); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: var(--mono-dim);
-  }
-  .variant-toggle .seg { display: flex; gap: 4px; }
-  .btn {
-    appearance: none; cursor: pointer; font-family: var(--mono); font-size: 10px;
-    letter-spacing: .07em; text-transform: uppercase; padding: 5px 9px;
-    border: 1px solid var(--line); border-radius: 2px; background: transparent;
-    color: var(--mono-ink); transition: border-color .3s var(--ease), color .3s var(--ease), background .3s var(--ease);
-  }
-  .btn:hover { border-color: var(--accent); color: var(--accent-ink); }
-  .btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-  #panelPill {
-    position: fixed; right: 16px; bottom: 16px; z-index: 20;
-    background: var(--surface); box-shadow: 0 10px 26px -20px rgba(25, 22, 20, .4);
-    padding: 7px 12px;
-  }
-  #panelBar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
-    background: var(--surface); border-top: 1px solid var(--line);
-    box-shadow: 0 -14px 34px -26px rgba(25, 22, 20, .5);
-    padding: 9px var(--gutter) 12px; font-family: var(--mono); font-size: 10px; color: var(--mono-ink);
-  }
-  #panelBar .bar-hd {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 9px;
-    letter-spacing: .1em; text-transform: uppercase; color: var(--mono-dim);
-  }
-  #panelBar .bar-hd .sp { flex: 1; height: 1px; background: var(--line); }
-  #panelBar .bar-hd .segset { display: flex; align-items: center; gap: 5px; }
-  #panelBar .bar-hd #v-read { color: var(--accent-ink); letter-spacing: .04em; font-variant-numeric: tabular-nums; text-transform: none; }
-  .knobs { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 6px 24px; }
+  /* ------------------------------------------------------------ controls --- */
+  .vt { position: fixed; left: 16px; top: 16px; z-index: 20; display: flex; align-items: center; gap: 8px;
+        background: var(--white); border-radius: 4px; padding: 6px 7px 6px 11px;
+        box-shadow: 0 10px 26px -18px rgba(29,29,20,.5);
+        font-family: var(--mono); font-weight: 500; font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: #5f5b55; }
+  .btn { appearance: none; cursor: pointer; font-family: var(--mono); font-weight: 500; font-size: 10px;
+         letter-spacing: .07em; text-transform: uppercase; padding: 5px 9px; border-radius: 3px;
+         border: 1px solid rgba(29,29,29,.16); background: transparent; color: #3d3a36;
+         transition: border-color .3s var(--ease), color .3s var(--ease), background .3s var(--ease); }
+  .btn:hover { border-color: var(--violet-600); color: var(--violet-600); }
+  .btn[aria-pressed="true"] { background: var(--violet-600); border-color: var(--violet-600); color: #fff; }
+  #pill { position: fixed; right: 16px; bottom: 16px; z-index: 20; background: var(--white); padding: 7px 12px;
+          box-shadow: 0 10px 26px -18px rgba(29,29,20,.5); }
+  #bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--white);
+         border-top: 1px solid rgba(29,29,29,.1); box-shadow: 0 -14px 34px -26px rgba(29,29,20,.5);
+         padding: 9px var(--gutter) 13px; font-family: var(--mono); font-weight: 500; font-size: 10px; color: #3d3a36; }
+  #bar .hd { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; letter-spacing: .1em; text-transform: uppercase; color: #6c675f; }
+  #bar .hd .sp { flex: 1; height: 1px; background: rgba(29,29,29,.12); }
+  #bar .hd #read { color: var(--violet-600); letter-spacing: .04em; text-transform: none; font-variant-numeric: tabular-nums; }
+  #bar .seg { display: flex; align-items: center; gap: 5px; }
+  .knobs { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px 24px; }
   .knob .lab { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 3px; }
-  .knob .lab b { font-weight: 500; letter-spacing: .04em; color: var(--mono-ink); }
-  .knob .lab span { color: var(--accent-ink); font-variant-numeric: tabular-nums; }
-  input[type="range"] { width: 100%; margin: 0; accent-color: var(--accent); height: 13px; display: block; }
-  body[data-panel="open"]  #panelPill { display: none; }
-  body[data-panel="closed"] #panelBar { display: none; }
-  body[data-panel="open"] .ticks { bottom: 108px; }
+  .knob .lab span { color: var(--violet-600); font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 100%; margin: 0; display: block; height: 13px; accent-color: var(--violet-600); }
+  body[data-panel="open"] #pill { display: none; }
+  body[data-panel="closed"] #bar { display: none; }
+  body[data-panel="open"] .ticks { bottom: 112px; }
 
-  /* ============================== responsive =============================== */
-  @media (max-width: 1000px) {
-    :root { --em: calc(var(--s) * 7px); }
+  @media (max-width: 1040px) {
+    :root { --em: calc(var(--u) * 7px); }
     .beat-in { grid-template-columns: 1fr; justify-items: center; gap: clamp(20px, 4.5vw, 40px); }
-    .hl, .hl.r { text-align: center; font-size: clamp(24px, 5.4vw, 36px); }
-    .stage { width: min(calc(var(--artw) * var(--em)), 100%); }
-    .knobs { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 6px 16px; }
+    .hl, .hl.l, .hl.r { text-align: center; padding: 0; font-size: clamp(25px, 5.4vw, 38px); }
+    .stage { width: min(calc(var(--pw) * var(--u) * 0.7px), 100%); }
+    .knobs { grid-template-columns: repeat(auto-fit, minmax(134px, 1fr)); gap: 6px 16px; }
   }
-  @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-    .cue i { animation: none; }
-  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .cue i { animation: none; } }
 </style>
 </head>
 <body data-variant="A" data-panel="closed" data-bg="violet">
 
-<!-- ======================= scaffolding: hero placeholder ==================== -->
 <section class="scaffold">
   <div>
     <span class="tag">placeholder · hero sits here</span>
-    <p>Catch misalignment. Resolve blockers. Keep commitments moving.</p>
+    <p>Nothing falls through the cracks.</p>
     <span class="cue"><i></i>scroll</span>
   </div>
 </section>
-<div class="rule"></div>
 
-<!-- ============================== the section ============================== -->
 <div id="beats">
   <div id="pin">
 
-    <!-- ---------------------------- BEAT 1 ---------------------------------- -->
+    <!-- =========================== BEAT 1 =========================== -->
     <section class="beat" data-beat="0" aria-label="Beat 1 — noticed">
       <div class="beat-in">
         <h2 class="hl l">The misalignment</h2>
         <div class="stage">
-          <!-- Drifting notifications. Cast, channels and copy are the four cards
-               from the Figma drift, so nothing here is a second version of a line
-               that already exists on the page. -->
-          <article class="ncard" data-n="0">
-            <span class="av"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAcFBQYFBAcGBgYIBwcICxILCwoKCxYPEA0SGhYbGhkWGRgcICgiHB4mHhgZIzAkJiorLS4tGyIyNTEsNSgsLSz/2wBDAQcICAsJCxULCxUsHRkdLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCz/wAARCABYAFgDASIAAhEBAxEB/8QAGwABAAMBAQEBAAAAAAAAAAAAAAQFBgMCBwj/xAAzEAACAQMCBAMHAgcBAAAAAAABAgMABBEFEgYhMUETUXEHFCIjYYGhFTIWQlJikbHBJP/EABoBAAIDAQEAAAAAAAAAAAAAAAMFAAQGAgH/xAAnEQACAgEDAwQCAwAAAAAAAAAAAQIDEQQSIQUxMhNBUYEiYXGx8f/aAAwDAQACEQMRAD8A29KUrXlgUpUTUdQi020aeUjyVc9TXE5xhFyk8JE7kulYq/43MTLEgj3ld7nntQds9yTjpy6Zqjl9pl9FdokNkZ2ZQfCA24U9CSc4J8qTvrVO/bGLa+f9Dek0stn1GlZfRuOLK/uUsr3ZZXrcvDZwRnyz0B+laimlGorvjvreUCaa4YpSlHPBSlKhBSlKhBWG9oKSK1sYstLN8MaebDsPXNbmsxxBg8Z8MKV3fNlI5Z6AUt6pFPSyfxj+zuvySPNt7MbrVNJj/UL1IbkptMca8hnA5nuQOVVWseyTUrRJPcL6J5A+7axxnA5c6+v27IUASVMgcxkGuNyrFmKkMaxP5RWUNPShJ4aPyfxJpF/Y6sY9UBgmRAUGPhI/txX132V8STa7wyYLuUy3Fm3hh2/cydifMjpn0qB7XbVZIbIlVFyLhdgYcjnAx/qtNwnwnbcLWJiiIeZid8mMbun/AGtB0dzslvXZdxbdX6djSNDSlK1AIUpSoQUpSoQVCudMW91fTp8HfE0iKR/LuQ8/xU2uFzenTzFcFtqK2GPlkEA0u6lBz00lELS1GabK6XhXVv1ZLkzxqoIBKwhCRn+oHJ+9eOJtL1W61d1s5vlR4+Ft+PvtINc/4z1OXWLiGLS7i5ktmKpGoyHGRub8j0zUW848v7K+Nxd6VdWyyZCxsmWfHXlWQanlYL6lXhpsha9o8t0umQ35w63SSfCScbQTjnzwTitt1qljuf1rV45CcLCjMwI55OBg/mrqtB0SqcK5Sl2b4+slbVSi2lEUpStAVBSlKhBSlXem6NFJCk9yS27omcD70G26NSzI5clHuVEUEs7bYonkP9ozXDiWx/TuGLq6v1GxhsESnLMxOB6ef2rZFkiUxQ7URf5UGAKyvHL50QIwZwrLI3chQwyf8Uru1k5xaisAXbl4MHo95Jpl3eaddGMXccniQyTZAbIxuBHY4qDxDrUotdjCFr25+WDGS2AewJ861Go6TY6vbRmdBKuMq6nBH1BFVVpw3pemXolhR5ZV5BnYvt9CelZ19sjSLeNqJHCWNPvf0+7djNPD7xJJ1IOSMeg/7W0fTp1XdHiZPNOf4rH6VB73xLdzqQfCiEA+hOSR/qtfpk8q2yNuJO0EAnv3p1o7baqVz9fYruv22uK7EYgg4III7GladVgvYAk6B8jk3Rh96o9QsTZSgB98bftPf701o1cbXtfDCxmpESlKVdOzpAoaZcjIHM1d+/FYw4O5VAxiqFXCN1wSMeldHvLeGzKmQkjYCoGefpSvUrfPHwLtRZiePguzcqsbvtZlySQvU451V+/LqVxvZEOIviXqM9x/up1s6vGuRgKm458zUTS44YpLyAR4lZt3TJK/T71TUUkwLk20Vl1wVe2+6bQrqNbeX4vdp84TP9J7CokfCGuzoUury1soertF8bkfTtW+045sQueaErXDVJEgs3MjhFK8yew71W2RcuVyWt8lHh8GGiFnwxpZMMTTMz/LjLfHKSeZzjrjn5VY6ZceJbxyBWQOWIVuoGehquikOrzi5SMpbRZWLd+5yerHy6ch5Vc28KxRoqj9pq/JJIoQbb/RMW7MSZB5HkK53tyLqNM9wcfTFQ53ETI79NjMPXFcfGzbQnOeX47UKUeMoNGbTweqV4jbcDk8+tKd1T3wUhpGW5Jnh2+YwHUAHFZ+9keHWrYnIWRthLeY+IfToDSlU35sR6rmb/k2ttcP4jQeA4Xk3iZBDfSvN0rwf+mLJeMFsdNw7j70pVP3Cexb6LeRTwM8WfDfDAHrzHf/ABVfxarXMUVqP2uGZ/qKUoKWLQzeauSvtY4oI44xhVyFHriuksnhhcRyybjjCDmPrSlG7yA9olRxFK3u6pExBHy1J5deR/Fc7S9W5jkYLlY22AegpSul4HD80dreVmuAW6sMYHQeVKUphpPBr9jTTNuB/9k=" alt=""></span>
-            <div><div class="who"><span class="n">Lucas Meyer</span><span class="ch">Private channel</span></div>
-            <div class="txt">Q3 priority is increasing revenue but the engineering team is prioritizing cost reduction in infrastructure.</div></div>
+          <!-- One column, one card below another — the seven cards from
+               frame 5757:64599, cast / channels / pills / copy verbatim.
+               The inbox item is the eighth and last element: the noise
+               scrolls past and the one that matters comes to rest. -->
+          <div class="col" data-role="col">
+          <article class="note card">
+            <span class="av"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAcFBQYFBAcGBgYIBwcICxILCwoKCxYPEA0SGhYbGhkWGRgcICgiHB4mHhgZIzAkJiorLS4tGyIyNTEsNSgsLSz/2wBDAQcICAsJCxULCxUsHRkdLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCz/wAARCABYAFgDASIAAhEBAxEB/8QAHAABAAEFAQEAAAAAAAAAAAAAAAcBAwQFBgII/8QANxAAAQMDAgMGAwcDBQAAAAAAAQACAwQFEQYhEjFBBxMiUWFxFDKBFRYjQpGhwSVDRFJTorGy/8QAGgEAAgMBAQAAAAAAAAAAAAAAAAUBAgQDBv/EACQRAAICAgAFBQEAAAAAAAAAAAABAhEDBBIhMTJBBSIzcYHR/9oADAMBAAIRAxEAPwCf0RFwLBERABFx+oO0CltdYaKhiFZUtOJCSQxu3IEfMfbb1XG12t9WTwunZHLHDxeERsDeXpz+hKpLJGPJs7QwzmrSJiRRTYu0m4wTcF0LKmFzubtntPlkAD6dPNSbQV9Pc6GOrpZA+KQZB8j1B9QrKSfQpOEodTJREUlAiIgAiIgAtDrW/fdzSVbcBgytbwxg8i47Bb5Rz23Sd3oNg4wwPqomOcejS7JP0A6ZUMtFXJI1Wn7czuY5pmNdO8cTnkbkncrd1FOxkGARgLQG+w2qKNuY4i4Dumz+F8g6ENJz+y8HWFNNwx0r+8me0uPGxzWNAOCSXADASZRb5yPTNpOomFqWigfbZZWR4lZ4st2zhYehdaTWaWEOqHy0VROI35HEWkt22Hljortffqeqt0rjEysiI4Xy0Lw8tycfKTnGSuTslqf96m2eKsj79tRwhr43NAfkFhyRzyByyOa3aqai7F261KSpH03S1LKuASs4uE8iWluf1V9WKJkzKSNtQWGXG/AMN+ivrYKQiIggIiIALQ6xsdNftOT01VG14jHfRkj5Xt3B/wC1vl4mYJIXxu5PaWn6jChq1RaL4ZJkPXExCnY6ttD5TnhBBBLzyAB5HyCsV9vp7ZSW+YMpn1TRJ8RE14BcHHiLQT/p2x7eqx5LTV/b/wBoU0sVc2lJY2GWYhrHA4JBGc432WBerLSwSNq4WW59VH4vh46acD3AJwD6pOk30PVS4eptZHh0Ebm0jYY3PaCXPaXYByR8xPTlst1peyRV3aE+5iNvBDCHv8OQXkeE+4GVwIp3CGnranMFVO/idCx+WD1CnrTMDYNO0QbwkvibIXD8xIzn12WvXVi7dyKKVeTboiLaJAiIpAIioSACScAdSoAque1neJ7VYJRQt47hUgxU7fJxBy72aAT9FrtZ9o9DpCJvFRVFZJKPwnMIbE49QXnqPZQRrHtPvep5muk7qmhjDgyOAFux2IJzk7BSvcrRfh4X7jubbdrRTTutdpaJzaYWwVfC4F1S7dz5QOuCSM9f0WBcLtp+bP8AV6ySPOfhuN2PbChM1VTBVCqhllhnactkjcWuHsQvcmrbu2UySmKocebnx7n1JGFlyasnJyi+ozw78YQ4JEg6ovnBbKipjZwZZ3UQz8oOy+iNDuc/Q1nLjxOFKxpPngY/hfFtXqOvuz4oqngZC1wPBG3Az6rurB2t6n0synhoa4S0EP8AiTtD4yOoB5t+hXfFicI0zHsZlllaPrdFGuhu2i16vr4rdUUMtvrZQ5zfGHxEAZ+bYgkZ5jopJa5r2hzSHNPIg5BVnydGanVlURFJAXOXK5tnqpIi/EMR4cD8xHMre1c4pqOac/22F37Lg53fgDiOSdz7rBt5XFKK8jLRxKTc34OW7UTHX6FrXt3dSuZM0+Xiwf2cVAwkcduhU960fE3Ql6YefwxP/IKAuX0XbQleN/ZTfjWRfRR+SsaSNpzlqyXHqrRGUwF5hupGudnkvYjc1uDkhX8bqo5oA6Ts7qRS65s5OzHVAYfZwI/lfS9PfY7bOwcWIiQHtztjz918n2ur+CvNHU5x3MzH/o4FT5XzCpJLH5GeiWbjcMkZIa6UVkxygyZs5GRuEWFZp/irHRTHcvhaT74x/CLWnYsap0WdQycFkmx+Ytb+pC46UbemERKdz5PweaHxfv8ACMO0a8NprRcKMyAPqe6jaM9OLid/5CiluHDIdnPkiJhoxSxcjBvtvN+FSNua8kYRFuMB5xvyVcIiALNQeGM4BPqOim3T8slRpuCeRxMkjQSPLZES7f7YjT03ukTZpQk6Tt2f9r+SiIu8O1GDL3v7P//Z" alt=""></span>
+            <div>
+              <div class="who"><span class="nm">Ines Duarte</span><span class="chip">#tech</span><span class="chip"><span class="lockwrap"><svg class="lock" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.35 5.2V3.5a2.65 2.65 0 0 1 5.3 0v1.7" fill="none" stroke="currentColor" stroke-width="1.15"/><rect x=".9" y="5.1" width="8.2" height="6.1" rx="1.2" fill="currentColor"/></svg></span>Private channel</span></div>
+              <p class="body">The marketing team needs the new API by Tuesday. Are we going to make it?</p>
+            </div>
           </article>
-          <article class="ncard" data-n="1">
-            <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
-            <div><div class="who"><span class="n">Omar Haddad</span><span class="ch">#leadership</span></div>
-            <div class="txt">Both the CRM and the Growth team are creating the new onboarding flow. Shouldn't CRM lead it since growth is late on Q3 KPIs?</div></div>
+          <article class="note card">
+            <span class="av"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAcFBQYFBAcGBgYIBwcICxILCwoKCxYPEA0SGhYbGhkWGRgcICgiHB4mHhgZIzAkJiorLS4tGyIyNTEsNSgsLSz/2wBDAQcICAsJCxULCxUsHRkdLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCz/wAARCABYAFgDASIAAhEBAxEB/8QAHAABAAICAwEAAAAAAAAAAAAAAAYHBAUBAgMI/8QAMxAAAQQBAgQFAwMCBwAAAAAAAQACAwQRBSEGEkFRBxMxYYEUInEykaFCsUNScsHR4fD/xAAaAQACAwEBAAAAAAAAAAAAAAAABQIDBAEG/8QAIxEAAgEEAgICAwAAAAAAAAAAAAECAwQRIRIxE0EFUYGh8P/aAAwDAQACEQMRAD8AvhERbTCERQbxR4/HA/D4+lDZNUt/bWYRnHTmx19v+lFtRWWSjFyeESXW+JtD4bg83WdWqUG45gJpQHOHs31PwFEn+OPALJeQazI8ZxzMqyFv9l8y6lJa1Cd2o6pYlt3LJLnnPNI9x7k7NaPQLVPoyue9z8QBv6WPO/49yqPK30aPCl2fbuk8SaLrsTJNL1SpcEg5mtjlHNj/AE+o/ZbNfEuhXBpepV547b/PDhyvh+zkPcO7r6d8MPEI8Z0rFW5H5epUcCQ4wJW+nOB3742391OFTLwyudLisonqIiuKQiIgAiIgAqJ4t0m7xZ4s6lSkkbHHXLY2yObksYGg4b7nJ/lXsoVqdSvW4yv3HAMJgjlc8+gAaWk/wsl23GnlG6xipVcMqDXPCnXqhdPWfHfh5vtYz7S0e4Wuh8LXvi866SHu3LeytK94kcPVG+V9VIXO2+6F2P3Wqt8W0XVjO2aLyidjzBLPJUxgfRoUG2yGQeHFEtI5SHDfJUk8LNEtaX4ovjZO4wNryPeD1GAN++5asKPjanI9zIKtmw4H/DiOD8qyOBH6db1qxdpysc51VjXNOz2uJBILTuDgA/sr7fnzXIxXipKm+BPERE3EAREQAREQByPUKur1Y6nHNWuvmnkrWGvcXfpLmvLth6Ow1ysRRfWaViteluBjPpj93MDvzHuEvvoy4qUfQ2+NnBSlCfvGP78lacR8HUbFhrza8sjJJdaODnry+my8tS4SpU+EXyfTQvnlsiSOXyxzBrQA3c77gHP5W1v2JNa4gbVdIImAZJ2BIHusHiS1fbadWbqNeat6tIcwcg7Yzg/lLVJ6wPnShvRFNN0Gk2yJGveSenM/v2Vu8CV4jqETwwMlhhkzgYy0ljRn9s/KrihK+C6Yo5w/G7mhwOM/j0VucC0g3TX6g7PPMTGB0DQf9z/ZaqOZ1UhddqNOi2vZKkRE4POBERABERABeF2u21Smhd/W04/PRe66Tv8AKrySAZLGF2O+BlRkk1hkotqSaKsbpVW5JK+zUjm5dxztDuUjqtBqk9mOV0EenQ12ZwJGxNBA/OMrcajcvxU49U0jll8xgkMLjgPa4ZGD3ChlnivWrji12nSNeTn7i0AfyvO04v0z2UqqjqS/Rta1SKuzEUbWlxye5J6lXZobK8ehU46z2PjZGBlrgd+vznKojSxM0GW1IHyu3cRsB7BS/wAI9Qkhh1CaYkVtRvSPiHRoBwHfJBW+y1Nin5FOVNMtdFw1wc0OaQ5p3BByCuU1EIREQAXDntYMuIH5XnNL5YwD9xWE92XZJJygsjDOzKdbaDhoJ9yorxp4gUeDGVPrady2+6XNYyq1p5QPUnJHcbLedcZWFqOk09UbGLkEdjyjlnmNyWn2KmkvZPGOiv6DwKphi5pNNkJkoz42dE7cN9i0kjB7LT26DhYJDfUqw7XD8UO9NggGSXMAyx3x/wC+FrnVKlFjnXw5uP0tYOcu9mj/AJwlVaylCXKntMdW97GceNXTRALNaxaeKNYEPlPKXdGjqT2AGSpzoh09mmQwaXar2IqzWtBhka/GO+DssOxG29Rkq1NMdSiny2V8jw57m9Rt36+2ywqfBOm0rDLNWJ1SdnpJA4sd8nr+CmFvb+KO+2Lbm480tdIk9XWLlCWSOCR3ltdkMO4G+T/dSGlxSyRoFqAsP+Zm4/ZRllY+pOSTkk+pXuyMAe6vcUZu+ydV7UFpvNBK2Qex3HwihcL3QytkY4sc3qDgoocWRcPokNqzzXXtz6HA+F5iYZ5X7Hoe6IuosXR3z7oX4/CIg6dXPbhayaKOxqBDxkYG3QbIinEiw6pENmjC8/pgERGQwdTCMjZdHgB3KPVEQBiuk2ec7ZwEREM4j//Z" alt=""></span>
+            <div>
+              <div class="who"><span class="nm">Lucas Meyer</span><span class="chip"><span class="lockwrap"><svg class="lock" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.35 5.2V3.5a2.65 2.65 0 0 1 5.3 0v1.7" fill="none" stroke="currentColor" stroke-width="1.15"/><rect x=".9" y="5.1" width="8.2" height="6.1" rx="1.2" fill="currentColor"/></svg></span>Private channel</span></div>
+              <p class="body">Q3 priority is increasing revenue but the engineering team is prioritizing cost reduction in infrastructure.</p>
+            </div>
           </article>
-          <article class="ncard" data-n="2">
+          <article class="note card">
+            <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
+            <div>
+              <div class="who"><span class="nm">Omar Haddad</span><span class="chip">#leadership</span></div>
+              <p class="body">Both the CRM and the Growth team are creating the new onboarding flow. Shouldn't CRM lead it since growth is late on Q3 KPIs?</p>
+            </div>
+          </article>
+          <article class="note card">
             <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
-            <div><div class="who"><span class="n">Bea Novak</span><span class="ch">#design</span></div>
-            <div class="txt">The wireframe is top priority and the tech team is waiting on it. Is there any update on the wireframe progress?</div></div>
+            <div>
+              <div class="who"><span class="nm">Bea Novak</span><span class="chip">#design</span></div>
+              <p class="body">The wireframe is top priority and the tech team is waiting on it. Is there any update on the wireframe progress?</p>
+            </div>
           </article>
-          <article class="ncard" data-n="3">
-            <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
-            <div><div class="who"><span class="n">Sofia Ruiz</span><span class="ch">#tech</span></div>
-            <div class="txt">The G-suite integration has no owner and due date. Who can take this, and by when?</div></div>
+          <article class="note card">
+            <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
+            <div>
+              <div class="who"><span class="nm">Sofia Ruiz</span><span class="chip">#tech</span></div>
+              <p class="body">The G-suite integration has no owner and due date. Who can take this, and by when?</p>
+            </div>
           </article>
-          <!-- what they converge into -->
-          <article class="mcard" data-role="inbox-1">
-            <span class="badge">Misalignment</span>
-            <div class="body">John promised a new feature to the client. We have a call with them soon but there is no sign of the feature in Tech.</div>
+          <article class="note card">
+            <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
+            <div>
+              <div class="who"><span class="nm">Jane Okafor</span><span class="chip">#operations</span></div>
+              <p class="body">Our north star is customer retention, but the team is mostly focused on internal processes with no clear value for customers. Should we redefine priorities?</p>
+            </div>
+          </article>
+          <article class="note card">
+            <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
+            <div>
+              <div class="who"><span class="nm">Tomas Lind</span><span class="chip">#onboarding-launch</span></div>
+              <p class="body">Design and Engineering have different ship dates for the onboarding in mind. What's the final date?</p>
+            </div>
+          </article>
+          </div>
+          <article class="item card emerge" data-role="item">
+            <span class="chip violet">Misalignment</span>
+            <p class="body">John promised a new feature to the client. We have a call with them soon but there is no sign of the feature in Tech.</p>
           </article>
         </div>
         <h2 class="hl r">nobody noticed.</h2>
       </div>
     </section>
 
-    <!-- ---------------------------- BEAT 2 ---------------------------------- -->
+    <!-- =========================== BEAT 2 =========================== -->
     <section class="beat" data-beat="1" aria-label="Beat 2 — nudged">
       <div class="beat-in">
         <h2 class="hl l">Alia noticed.</h2>
         <div class="stage">
-          <article class="mcard" data-role="alia-card">
-          <div class="msg">
-            <span class="av is-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.7" fill="var(--ink)"/><path d="M2.4 11.3 H 19.6" stroke="var(--alia-tile)" stroke-width="2.1"/><path d="M6.4 18.6 L 19.6 11.3" stroke="var(--alia-tile)" stroke-width="2.1"/></svg></span>
-            <div>
-              <div class="mhd"><span class="n">Alia</span><span class="app">app</span><span class="tm">Thu 9:20</span></div>
-              <!-- Verbatim from the CS-tech thread in Figma section 02. The brief's
-                   tighter rewrite was "The client was promised this feature by next
-                   week. Where does it stand?" — better line, but it has to change in
-                   BOTH places or the page says the same thing two ways. -->
-              <div class="say">Hello <span class="mn" data-chip="0">@Jane (CS)</span> and <span class="mn" data-chip="1">@John (Tech)</span>. The new feature was promised to the client to be ready by next week, how is the progress on that?</div>
+          <article class="panel card" data-role="ask">
+            <header class="phead"><span class="rm">CS-tech</span><span class="mt">Group DM · 3 people</span></header>
+            <div class="pbody">
+              <div class="msg">
+                <span class="av alia">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="11.4" fill="var(--ink)"/>
+                    <g stroke="var(--violet)" stroke-width="2.7">
+                      <path d="M0 12 H 23"/><path d="M1 3.6 L 23 12"/><path d="M1 20.4 L 23 12"/>
+                    </g>
+                  </svg>
+                </span>
+                <div>
+                  <div class="hd"><span class="nm">Alia</span><span class="chip app">app</span><span class="ts">Thu 9:20</span></div>
+                  <!-- the frame's wording. the brief's shorter rewrite was "The client
+                       was promised this feature by next week. Where does it stand?" —
+                       better line, but it has to change in section 02 as well. -->
+                  <p class="body">Hello <span class="mn" data-chip="0">@Jane (CS)</span> and <span class="mn" data-chip="1">@John (Tech)</span>. The new feature was promised to the client to be ready by next week, how is the progress on that?</p>
+                </div>
+              </div>
             </div>
-          </div>
           </article>
         </div>
         <h2 class="hl r">One thread.</h2>
       </div>
     </section>
 
-    <!-- ---------------------------- BEAT 3 ---------------------------------- -->
-    <section class="beat" data-beat="2" aria-label="Beat 3 — resolved">
+    <!-- =========================== BEAT 3 =========================== -->
+    <section class="beat" data-beat="2" aria-label="Beat 3 — settled">
       <div class="beat-in">
         <h2 class="hl l">Two replies.</h2>
         <div class="stage">
           <div class="b3">
-            <!-- Variant A — two people close it, in the order and wording the
-                 Figma thread actually uses, so "2 replies" means two replies. -->
+            <!-- A · the two people close it, in the frame's order and wording -->
             <div class="v-a">
-              <article class="mcard" data-role="reply-card">
-              <div class="divider"><span class="lbl">2 replies</span><span class="ln"></span></div>
-              <div class="msg" data-role="reply-1">
-                <span class="av"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAcFBQYFBAcGBgYIBwcICxILCwoKCxYPEA0SGhYbGhkWGRgcICgiHB4mHhgZIzAkJiorLS4tGyIyNTEsNSgsLSz/2wBDAQcICAsJCxULCxUsHRkdLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCz/wAARCABYAFgDASIAAhEBAxEB/8QAHAABAAICAwEAAAAAAAAAAAAAAAUGAQcCAwQI/8QANhAAAQMDAwEECAUEAwAAAAAAAQACAwQFEQYSITEHE0FRIiNhcYGRobEUFTJCwVJictGio+H/xAAaAQADAQEBAQAAAAAAAAAAAAAAAwQCBQEG/8QAIhEAAgICAgEFAQAAAAAAAAAAAAECAxEhBDEyEiIjQVHw/9oADAMBAAIRAxEAPwDeaIicc4IiEgAknAHJKADnBrS5xAaBkknACgqnW+lqSfuZ9QW5kgOC3vw4g/DK0D2ndpNw1TdJKGgkkhtUTy1kbCR32P3u88+A6BVS2Wioucoa3LJPI9CvMopjx21s+v6KvpLlTNqKKqhqoXdHxPDh9F3r5+03ZtRWWpbV0TJWTxHLjE/IkHk5vitwaQ1bBqqimcIH0tVTP7uaF5yQfMexe9rKF2VSh2WFERAoIiIAIiIAKPv5eNNXQxvLHikm2uHUHYeVIKP1DP8AhdMXSctL+7pJXbQMk+gUHq7PmOxWqCkoHSSASzSuwSecBW6xwwQOyyMNI5OB7FS2V76G20zQWNkmaJC6QnDQfYOSpzSt/FXdGWyZ7XumwN7GEAA+PPKilnOT6KpxSUTbdmc0Rskacvxyu6htTbXrGW405LGVfdmRgHBJy0n7KhP1FU2y/G2RVjpS1+CWUj34x4ZB6fArZdNVvqrdR1Mex7+8Y1xDS3gnyPI/9T6pom5UPUngs6LKwnHFCIiACIiAC4TwNqaaWB4y2Vjoz7iMfyuaIA+aKO3tp6xtC4OMkOYsH+3jldNjY12rwIyx7hMGs28l3tVo19RSWXX9XLO0ilr90zH+Ba5uHD3hw+o81S9PRGmugkJ3FpJje30SB5ez3qJpps+lpsUoppG0L/QR096ZPLFH3BPrHtdnZ/l5K+0kMf4COJh3CZrSOfIgrXFzhrrlpju7dspWbSJJOHvfx+kZ8PMq+aOpJYLLb4pCT3EDWnPuWkvdj9F8iz48/haD1WERVnzwREQARFnqgDCLyXG60NopjPX1UdPGPF55PuHUrWOo+2YMdJTWSlAJBAqJuSPaG9PmtKLewW9I9nbJUQVVnp6OPbLNTTd5KByYwW4GfLPX5LWNnoZXVbWh42Z5z1Vp0hHJcaGerrZO+fVTOc50pzuxw4kn4/Je02Cjp5pI4ZI5WN9OCRjw7LPAZHiOh9yTdW4+5HW4kkl6PstOm7cwUrGvGQB0PTKsEN9oqXU0WnyxzZpaYVEcn7XHJBb7DxlVOiuTbfQODpORzklROlLs7UfaKbiR6qFpposnGSAST8yB8VmlNvZrkpOLybeRQH5+6mibI/1sRx14cMqSprvR1TAWS4PiD1CrlTOO8HFUkz2osNe17dzXBw8wUSjRWdeanm0vZIainawzVE4haXjIaMEk4+AWpZ+0G/1ZLpq+Q+G1p2gfAKc7b71H+Z22ztf6cUZqXDyLjgfRp+a18GA1Lx/Vh4+IyrKFoxNY7PXWXCsuUu+qnfK4+LnZURUwufU4iO1wb1xnhSMbgJNjsZKxJC1lwg3cCTLf5H2VLrTQuNjizm2urDQU9AH7aencXkM4MmTk588c4CvFjotgZBLIKbvB3kExHqnkjkHHTPHyVNp2NZeKdjv0udtOVszSIZUW2W2ztDzTvw0Hyz4fJLsrSWH0UU3S7XZA2+0VWodWvs80rqaNjHSzPaQ70B4tPQ5JABXur9Pt01QNloHeqo6sVDpHDBDdxdj24A6+OFZdM2kUupL7UucZHsZFAHEYODlx6ePA5WdSNbLpurbx6zc3/if9pNcVCTwUXWuxJMi5Lhupaaoj5imZu94PmubC6GbLHENPIUDbZTPoi3Sjq1m35Kdgk3MiaRj0W/ZdLOjkfeCUbc5aOeiqd5DWztjlHg5j/R+hwUXjvER/L5Wt67Q8e8EH+EUc64zeWVx6Nb9rLxL2jXAyMxIxkUTeerQwEfcqBpnA1VMD+6D7Ej/SIl8c1b4oXA/h6xrgu+tfuoI6hucwubJ8uv0yiKv7kibGos9M4DKynlB6OBWw9Nyfh9VgftnGfflERatM1x3sutsZ3d4voI/U+I/9agr5JixxMJ5f3jvoURSx7/vwrZTtNP7zQEQ6mN5CssDN0kTQSOGjHwCIq14ohl5slrhFvDmgZxE4EfBERT5H4P/Z" alt=""></span>
-                <div>
-                  <div class="mhd"><span class="n">John Baptista</span><span class="ch">#tech</span><span class="tm">Thu 9:34</span></div>
-                  <div class="say">Oh I wasn't aware of that! <span class="mn">@Jane (CS)</span> could you give me more context of what's needed for this feature? I can organize my team to deliver it.</div>
+              <article class="panel card" data-role="thread">
+                <header class="phead"><span class="rm">CS-tech</span><span class="mt">Group DM · 3 people</span></header>
+                <div class="pbody">
+                  <div class="replies"><b>2 replies</b><i></i></div>
+                  <div class="msg" data-role="reply-1">
+                    <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
+                    <div>
+                      <div class="hd"><span class="nm">John Baptista</span><span class="ts">Thu 9:34</span></div>
+                      <p class="body">Oh I wasn't aware of that! <span class="mn">@Jane (CS)</span> could you give me more context of what's needed for this feature? I can organize my team to deliver it.</p>
+                    </div>
+                  </div>
+                  <div class="rule"></div>
+                  <div class="msg" data-role="reply-2">
+                    <span class="av"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAcFBQYFBAcGBgYIBwcICxILCwoKCxYPEA0SGhYbGhkWGRgcICgiHB4mHhgZIzAkJiorLS4tGyIyNTEsNSgsLSz/2wBDAQcICAsJCxULCxUsHRkdLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCz/wAARCABYAFgDASIAAhEBAxEB/8QAHAABAAIDAQEBAAAAAAAAAAAAAAUHBAYIAwIB/8QANhAAAQMDAgMFBwMDBQAAAAAAAQIDBAAFEQYhEjFhBxMUQVEiIzJxgZHRJFKxFUNyc4Kh4fH/xAAaAQACAwEBAAAAAAAAAAAAAAADBAACBgUB/8QAJhEAAgIBAwMEAwEAAAAAAAAAAAECAxESITEEBUETIjJxFDNRsf/aAAwDAQACEQMRAD8A3elKVrxgUpWpa111H0syGGUpfuDicpQT7KB+5X4qk5qC1SPG0uTa3HENIK3FpQkeajgVjs3KDIUUsy2XCNvZWDVDO6mlXiX31yluvrUdkckj5DkKlI0Zye4lpk4HCVE5JwAMmuZZ3HS/bEpqb8F3Ag8jmv2qPsWrb5ElrDU11TQXs297Yx6Z51bNhv7N6jA4DUgfG0TuOo6UzT1kLXpezLKWdiXpSlOlhSlKhBSlKhDAvd1ZslllXF7dDCCrh/cfIfeueJCblqa+qcwp+XLWVHH8dABVjds967i2RbW2rBdWHHB05AfzX3o2226zW5t6TIaROlJBVxc0pPJI9Kz/AHHqHr9OPg8UdT3PrTPZpDjJQ7PPfu43HkK31OmoHgFsRWEtFSSCUjBr0ihJYSpC0qHQ1Ix50OKr9RJbbztvXFbb3Y1hJbFJ3azKsk59Bb9kHPLnUdE1Oq13FqdHVxd0QVDPNNWrrC1sTojsmKpL6cEjh59RVDTkGLPWjmnJyOholdrT25QGVaW50lAms3G3sTGFcTT6AtJ6Gsitb7P1KOgrXxeTZT9Ao1slbKuWuCl/UUFKUohBSlfLjiWm1OKOEoBUT8qhCgO02Qq7688M2eL3yWE/QgfmrFm3CZE/TQ7IHGGEpQCrYubbkfbzqs4Bbuva1ADystuTQrfz3JroaS1bksKU+0lSgNqxl8tc3IvWiJ0k45ch3fh1RyE8RSoYx5VHXi8yrbKWmJbFSnUnJRw7kZxt61uemIqG1POpRwZTsMYOK9pVtgSJpUUgO/ESNjQHBrAdSIqzTxqGEpMm3rhTGwEqQpGMjG3zFUz2haTegaq7iIge/wAFAJwBk8jnkK6TZjsx4oSkZ9TVXdpMHxt6bfQD3bCAHFAZwN6r8ZZK/LYzNFRHoGjoESS2W32EqbcSd8KCjmp2oPRrintJQnFqKlKCiSf8jU5W2o/VH6X+C4pSlGIKi9TOlnTM9aTg90R96lKiNVDOlp/+kaHb8JfTIc6sS/AawhTVHAZlIWT6AKGavu93RuGmO9Kc4WFKI7wAkJ9DtXPt4a4lOKSNs5qztAanRqKyItUxQXLiJ4cK/uIxgK+YGx+lY22OyaL0zxLDLFt13lIUprxQa3+NYPEB8jWXd57UcxJCrml2QVhtPEQFLJ8gKxrfdp8dKWCht4JGEqW2FHGMYzUk/B/qSUvyGkKcSeJBIHsnp6UCQ3wSkSY480AoYBGa0a8z5l/vU+z2+MlLDaw2/MJOBtukdfLatpkOOohqQwrhdI4QvGeHrWLDiNQYqWGh7KdyTzUTzJ6k10e39J+RJznwhebxsj4t0Fq2W5mGz8DScDPnWVSlatJJYQEUpSvSCojVLiG9LzysgZaIGfWtuetCGEBWVL+e1VX2qX2JZ7M8yr3kiVlthvOycHClkdPLqaUtuTreBf14t4RUNwYKg8jnkEioe1XKTY7rHuENXC8wviGeRHmD0NbIopeS06MEKTv/AAaho9qMiaIxPCoqAz/uGf8Ais4+AiTbyi/tNatgXm3syuBTDq0gqbUM4PQjnW1NT1Sx3TCSEHmo7VoGmLC9ak+EeRwraxjbYg7gjoRW+QAU4Fc2TecHQXBnJYwOA5OeeOdecmIuOG1542Xk8bbg5KH5rIdJYiOvkZKUnHzrabRaEuaViQpqMqS0kKGd0qx5H1rp9u6iVDeeGK2yxuaPSthuGlHWQVxHe9H7F7H71CuQpTIy5HcSPXhNaeu+uxe1g1JPg8KUpRixtstSRGXnGRvg1yV2iXB29awnOFRU1GcUy2PQJ8/uaUrgXN6MCkF7iKiSC1FKDn3biVgH0PMVmrKWJqZCD7TSwVY9D/7SlIsYjydL2IsXy1QlOxyAGUhl1HxcOOR9RmpBdr8HKSkqykjiBxjP0pSvLa46VLyXhN6tPgloFtTKU284PdNLylOPiI/FT/epbwCoJz6mlKtCKSAWNt7heFt5BBrw4cqGOStiKUoq2BkNfbKiShcmMkJeSMqSB8f/AHSlKfp6icY6QkZNH//Z" alt=""></span>
+                    <div>
+                      <div class="hd"><span class="nm">Jane Okafor</span><span class="ts">Thu 9:41</span></div>
+                      <p class="body">Yes, of course! We need to get this shipped asap.</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="msg" data-role="reply-2">
-                <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
-                <div>
-                  <div class="mhd"><span class="n">Jane Okafor</span><span class="ch">#customer-success</span><span class="tm">Thu 9:41</span></div>
-                  <div class="say">Yes, of course! We need to get this shipped asap.</div>
-                </div>
-              </div>
               </article>
             </div>
-            <!-- Variant B — the Beat 1 card, closed -->
+            <!-- B · the beat 1 item, closed -->
             <div class="v-b">
-              <article class="mcard" data-role="inbox-3">
-                <span class="badge done">Resolved</span>
-                <div class="body">John promised a new feature to the client. We have a call with them soon but there is no sign of the feature in Tech.</div>
+              <article class="item card" data-role="item-done">
+                <span class="chip">Resolved</span>
+                <p class="body">John promised a new feature to the client. We have a call with them soon but there is no sign of the feature in Tech.</p>
               </article>
             </div>
           </div>
@@ -433,8 +501,6 @@
   </div>
 </div>
 
-<div class="rule"></div>
-<!-- ==================== scaffolding: next section placeholder =============== -->
 <section class="scaffold">
   <div>
     <span class="tag">placeholder · next section</span>
@@ -442,23 +508,22 @@
   </div>
 </section>
 
-<!-- ================================ controls =============================== -->
-<div class="variant-toggle">
+<div class="vt">
   Beat 3
-  <span class="seg">
-    <button type="button" class="btn" data-variant="A" aria-pressed="true">A · reply</button>
+  <span class="seg" style="display:flex;gap:4px">
+    <button type="button" class="btn" data-variant="A" aria-pressed="true">A · replies</button>
     <button type="button" class="btn" data-variant="B" aria-pressed="false">B · card</button>
   </span>
 </div>
 
-<button type="button" class="btn" id="panelPill">Controls</button>
+<button type="button" class="btn" id="pill">Controls</button>
 
-<div id="panelBar">
-  <div class="bar-hd">
+<div id="bar">
+  <div class="hd">
     <span>Controls</span>
-    <span id="v-read" title="What the current settings work out to on this screen">600 × 900 px</span>
+    <span id="read">578 × 900</span>
     <span class="sp"></span>
-    <span class="segset">Ground
+    <span class="seg">Ground
       <button type="button" class="btn" data-bg="violet" aria-pressed="true">Lavender</button>
       <button type="button" class="btn" data-bg="paper" aria-pressed="false">Paper</button>
     </span>
@@ -466,19 +531,19 @@
     <button type="button" class="btn" id="hide">Hide</button>
   </div>
   <div class="knobs">
-    <div class="knob" title="1.00x = the product-UI sizing in the Figma frame (15px message text, 36px avatar, 460px card)">
-      <div class="lab"><b>Artefact scale</b><span id="v-scale">1.40×</span></div>
-      <input type="range" id="c-scale" min="0.8" max="2.4" step="0.05" value="1.4">
+    <div class="knob" title="1.00x = Figma frame 5215:868 at 1:1 — 16px message text, 40px avatar, 578px panel">
+      <div class="lab"><b>Artefact scale</b><span id="v-u">1.00×</span></div>
+      <input type="range" id="c-u" min="0.7" max="2.2" step="0.05" value="1">
     </div>
-    <div class="knob" title="Artefact column width, in units of the artefact's own em">
-      <div class="lab"><b>Width</b><span id="v-width">46 em</span></div>
-      <input type="range" id="c-width" min="26" max="62" step="1" value="46">
+    <div class="knob" title="Panel width in frame px at 1.0x. 578 is the frame; the drift cards stay proportionally narrower.">
+      <div class="lab"><b>Panel width</b><span id="v-pw">578 px</span></div>
+      <input type="range" id="c-pw" min="420" max="760" step="2" value="578">
     </div>
     <div class="knob" title="Section height as a percentage of the viewport">
       <div class="lab"><b>Section</b><span id="v-sect">100 vh</span></div>
       <input type="range" id="c-sect" min="70" max="115" step="1" value="100">
     </div>
-    <div class="knob" title="0 = each beat clears the stage before the next arrives · 1 = long crossfade, both on screen at once">
+    <div class="knob" title="0 = each beat clears the stage before the next arrives · 1 = long crossfade">
       <div class="lab"><b>Overlap</b><span id="v-lap">0.60</span></div>
       <input type="range" id="c-lap" min="0" max="1" step="0.05" value="0.6">
     </div>
@@ -490,178 +555,198 @@
       <div class="lab"><b>Drift</b><span id="v-drift">56 px</span></div>
       <input type="range" id="c-drift" min="0" max="160" step="4" value="56">
     </div>
-    <div class="knob" title="How far the two side headlines converge inward as a beat centres">
-      <div class="lab"><b>Converge</b><span id="v-conv">44 px</span></div>
-      <input type="range" id="c-conv" min="0" max="140" step="4" value="44">
+    <div class="knob" title="How far the headlines travel vertically — the gap between the outgoing and the incoming pair">
+      <div class="lab"><b>Headline shift</b><span id="v-conv">140 px</span></div>
+      <input type="range" id="c-conv" min="0" max="320" step="5" value="140">
     </div>
   </div>
 </div>
 
 <script>
 /* ============================================================================
-   CONFIG — the defaults. The controls panel writes over these at runtime and
-   remembers your last settings in localStorage. Hit Reset to come back here.
+   CONFIG — defaults. The bar writes over these and remembers them.
    ========================================================================== */
 const CONFIG = {
-  artefactScale : 1.40,   /* 1.0 = the Figma frame's own product-UI sizing    */
-  artefactWidth : 46,     /* artefact column width, in artefact-em (46 = 460px
-                             at 1.0, which is the Figma card width)           */
-  sectionVH     : 100,    /* section height, % of viewport                    */
-  overlap       : 0.60,   /* 0 = clear hold between beats · 1 = long crossfade */
-  scrollPerBeat : 1.25,   /* viewport-heights of scroll per beat (pacing)     */
-  drift         : 56,     /* px a beat travels vertically as it passes        */
-  converge      : 44,     /* px the side headlines converge inward            */
-  variant       : 'A',    /* Beat 3: 'A' replies · 'B' resolved card          */
-  bg            : 'violet'/* section ground: 'violet' (as in Figma) · 'paper'  */
+  artefactScale : 1.00,   /* 1.0 = Figma frame 5215:868 at 1:1               */
+  artefactWidth : 578,    /* panel width in frame px                         */
+  sectionVH     : 100,
+  overlap       : 0.60,
+  scrollPerBeat : 1.25,
+  drift         : 56,     /* px the artefact travels vertically per beat     */
+  headShift     : 140,    /* px the headlines travel vertically, on top of
+                             drift — this is the gap between the outgoing and
+                             the incoming headline pair                      */
+  variant       : 'A',
+  bg            : 'violet'
 };
+/* Beat 1 has to carry a whole scrolling feed past the middle, so it gets a
+   long run-up. It stays fully opaque through it — there is nothing behind it
+   to cross-fade from. LEAD_OUT is the tail after beat 3 centres. */
+const LEAD_IN = 1.75, LEAD_OUT = 0.35;
 
-/* how much lead-in before beat 1 centres, and lead-out after beat 3, in beats */
-const LEAD = 0.35;
+/* Feed falloff, as fractions of the section height so it holds up at any
+   section size: a card is full size crossing the middle, 25% smaller by
+   SHRINK_R, opaque until FADE_IN and gone by FADE_OUT — which sits inside the
+   section edge, so cards dissolve rather than getting clipped. */
+const SHRINK_R = 0.38, FADE_IN = 0.16, FADE_OUT = 0.43;
 
-/* ------------------------------- plumbing -------------------------------- */
+/* Beat 1 runs in three phases across its own u:
+     0    -> A_END   the feed scrolls, last card ends up centred
+     A_END-> B_END   the cards gather into the deck from frame 5757:63093
+     C_ST -> 1       the Misalignment card comes out of the deck's front
+   Deck, measured off that frame: 7 layers, each one 20px higher and 10px
+   narrower than the one in front of it. */
+const A_END = 0.70, B_END = 0.85, C_ST = 0.87;
+const DECK_DY = 20, DECK_DW = 10;
+
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const root    = document.documentElement;
-const beatsEl = $('#beats');
-const pinEl   = $('#pin');
-const beats   = $$('.beat');
-const N       = beats.length;
-const reduce  = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const root = document.documentElement;
+const beatsEl = $('#beats'), pinEl = $('#pin');
+const beats = $$('.beat'), N = beats.length, SPAN = (N - 1) + LEAD_IN + LEAD_OUT;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const clamp  = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
 const smooth = t => { t = clamp(t); return t * t * (3 - 2 * t); };
 const easeOut = t => { t = clamp(t); return 1 - Math.pow(1 - t, 3); };
-const ramp   = (v, a, b) => smooth((v - a) / (b - a));
-const lerp   = (a, b, t) => a + (b - a) * t;
+const ramp = (v, a, b) => smooth((v - a) / (b - a));
+const lerp = (a, b, t) => a + (b - a) * t;
 
-/* per-beat cached nodes */
 const parts = beats.map(b => ({
-  el      : b,
-  hl      : [$('.hl.l', b), $('.hl.r', b)],
-  ncards  : $$('.ncard', b),
-  inbox1  : $('[data-role="inbox-1"]', b),
-  aliaCard: $('[data-role="alia-card"]', b),
-  chips   : $$('.mn', b),
-  replyCard: $('[data-role="reply-card"]', b),
-  replies : $$('[data-role^="reply-"]', b),
-  inbox3  : $('[data-role="inbox-3"]', b)
+  el: b,
+  hl: [$('.hl.l', b), $('.hl.r', b)],
+  col: $('[data-role="col"]', b),
+  notes: $$('.note', b),
+  item: $('[data-role="item"]', b),
+  centres: [], headStart: 0, headEnd: 0, deckH: 0, frontY: 0,
+  ask: $('[data-role="ask"]', b),
+  chips: $$('.mn', b),
+  replyPanel: $('[data-role="thread"]', b),
+  replies: $$('[data-role^="reply-"]', b),
+  itemDone: $('[data-role="item-done"]', b)
 }));
 
-/* Beat 1 — where each notification starts, in artefact-em, relative to the
-   convergence point. They drift up and inward and dissolve into the card.     */
-const DRIFT_START = [
-  { x: -9.5, y: 16, r: -0.7 },
-  { x:  9.0, y: 23, r:  0.6 },
-  { x: -8.5, y: 29, r:  0.5 },
-  { x:  9.5, y: 35, r: -0.5 }
-];
-const DRIFT_END = { x: 0, y: -1.2 };
+let EM = 10, travel = 1;
 
-let EM = 15;          /* px per artefact-em, read from the DOM */
-let travel = 1;       /* px of scroll while the section is pinned */
-const SPAN = (N - 1) + 2 * LEAD;
-
-/* --------------------------- layout / config ----------------------------- */
 function applyConfig() {
-  root.style.setProperty('--s', CONFIG.artefactScale);
-  root.style.setProperty('--artw', CONFIG.artefactWidth);
+  root.style.setProperty('--u', CONFIG.artefactScale);
+  root.style.setProperty('--pw', CONFIG.artefactWidth);
   root.style.setProperty('--section-h', CONFIG.sectionVH + 'vh');
   document.body.dataset.variant = CONFIG.variant;
   document.body.dataset.bg = CONFIG.bg;
 
   const vh = window.innerHeight;
-  const sectionPx = vh * CONFIG.sectionVH / 100;
-  beatsEl.style.height = Math.round(sectionPx + SPAN * CONFIG.scrollPerBeat * vh) + 'px';
-
-  EM = parseFloat(getComputedStyle($('.stage')).fontSize) || 15;
+  beatsEl.style.height = Math.round(vh * CONFIG.sectionVH / 100 + SPAN * CONFIG.scrollPerBeat * vh) + 'px';
+  EM = parseFloat(getComputedStyle($('.stage')).fontSize) || 10;
   travel = Math.max(1, beatsEl.offsetHeight - pinEl.offsetHeight);
+
+  /* measure the feed column once per layout: each card's centre inside it, and
+     the read-head positions that put the first card just below the section and
+     the last one dead centre */
+  parts.forEach(q => {
+    if (!q.col) return;
+    q.centres = q.notes.map(c => c.offsetTop + c.offsetHeight / 2);
+    const h0 = q.notes[0].offsetHeight;
+    const hFront = q.notes[q.notes.length - 1].offsetHeight;
+    q.headStart = q.centres[0] - (pinEl.offsetHeight / 2 + h0 / 2);
+    q.headEnd = q.centres[q.centres.length - 1];   /* last card dead centre */
+    /* deck: front card at the bottom, each layer 20px higher */
+    q.deckH = hFront + (q.notes.length - 1) * DECK_DY * CONFIG.artefactScale;
+    q.frontY = -q.deckH / 2 + (q.notes.length - 1) * DECK_DY * CONFIG.artefactScale + hFront / 2;
+  });
   syncUI();
   render();
 }
 
-/* ------------------------------- the frame -------------------------------- */
 let lastActive = -1;
 
 function render() {
   const r = beatsEl.getBoundingClientRect();
   const topOffset = (window.innerHeight - pinEl.offsetHeight) / 2;
-  const t = clamp((topOffset - r.top) / travel);
-  const p = -LEAD + t * SPAN;
+  const p = -LEAD_IN + clamp((topOffset - r.top) / travel) * SPAN;
 
-  const outer = 0.35 + 0.45 * CONFIG.overlap;          /* |d| where a beat is gone   */
-  const inner = outer - (0.10 + 0.30 * CONFIG.overlap); /* |d| where it starts fading */
+  const outer = 0.35 + 0.45 * CONFIG.overlap;
+  const inner = outer - (0.10 + 0.30 * CONFIG.overlap);
   const drift = reduce ? 0 : CONFIG.drift;
-  const conv  = reduce ? 0 : CONFIG.converge;
+  const shift = reduce ? 0 : CONFIG.headShift;
 
   parts.forEach((q, i) => {
-    const d = p - i;
-    const a = Math.abs(d);
-
-    /* beat opacity — plateau in the middle, crossfade at the edges */
-    const alpha = a <= inner ? 1 : a >= outer ? 0 : 1 - smooth((a - inner) / (outer - inner));
+    const d = p - i, a = Math.abs(d);
+    /* beat 1 holds at full opacity through its long run-up */
+    const alpha = (i === 0 && d < 0) ? 1
+      : a <= inner ? 1 : a >= outer ? 0 : 1 - smooth((a - inner) / (outer - inner));
     q.el.style.opacity = alpha.toFixed(3);
     q.el.style.visibility = alpha < 0.004 ? 'hidden' : 'visible';
-    q.el.style.transform = 'translate3d(0,' + (-d * drift).toFixed(1) + 'px,0)';
-    if (alpha < 0.004) return;   /* nothing else to compute while invisible */
+    /* beat 1 has a 1.75-beat run-up, so it must not pre-offset over all of it —
+       it arrives with the page and only moves on the way out. */
+    const dMove = i === 0 ? Math.max(0, d) : clamp(d, -1, 1);
+    q.el.style.transform = 'translate3d(0,' + (-dMove * drift).toFixed(1) + 'px,0)';
+    if (alpha < 0.004) return;
 
-    /* headlines converge inward as the beat arrives at centre */
-    const near = 1 - clamp(a / 0.8);
-    const off  = (1 - easeOut(near)) * conv;
-    q.hl[0].style.transform = 'translate3d(' + (-off).toFixed(1) + 'px,0,0)';
-    q.hl[1].style.transform = 'translate3d(' + ( off).toFixed(1) + 'px,0,0)';
+    /* headlines move on the vertical only, and travel further than the
+       artefact so consecutive pairs clear each other */
+    const hy = (-dMove * shift).toFixed(1);
+    q.hl[0].style.transform = 'translate3d(0,' + hy + 'px,0)';
+    q.hl[1].style.transform = 'translate3d(0,' + hy + 'px,0)';
 
-    /* u = this beat's own timeline: 0 as it starts arriving, 1 once centred.
-       beat 1 starts at the exact moment the section pins, so no part of the
-       convergence happens off-stage. */
-    const uFrom = i === 0 ? -LEAD : -0.5;
+    /* u: 0 as the beat starts arriving, 1 once centred. beat 1 starts the
+       instant the section pins, so none of the convergence happens off-stage. */
+    const uFrom = i === 0 ? -LEAD_IN : -0.5;
     const u = reduce ? 1 : clamp((d - uFrom) / (-0.02 - uFrom));
 
-    /* ---- Beat 1: notifications converge, then the one card resolves ---- */
-    if (q.ncards.length) {
-      q.ncards.forEach((c, k) => {
-        const s0 = DRIFT_START[k] || DRIFT_START[0];
-        const cu = clamp((u - 0.02 - k * 0.075) / 0.52);
-        const e  = 0.4 * cu + 0.6 * smooth(cu);   /* near-linear, soft at both ends */
-        const x  = lerp(s0.x, DRIFT_END.x, e) * EM;
-        const y  = lerp(s0.y, DRIFT_END.y, e) * EM;
-        const sc = 1 - 0.13 * e;
-        c.style.opacity = (ramp(cu, 0, 0.17) * (1 - ramp(cu, 0.45, 0.85))).toFixed(3);
-        c.style.transform = 'translate3d(-50%,-50%,0) translate3d(' +
-          x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) rotate(' + s0.r + 'deg) scale(' + sc.toFixed(3) + ')';
+    if (q.col) {
+      /* phase A — one read head walks down the column at a steady pace; every
+         card is full size crossing the middle and 25% smaller at either end */
+      const head = lerp(q.headStart, q.headEnd, clamp(u / A_END));
+      q.col.style.transform = 'translate3d(-50%,' + (-head).toFixed(1) + 'px,0)';
+      const H = pinEl.offsetHeight;
+      const sr = SHRINK_R * H, f0 = FADE_IN * H, f1 = FADE_OUT * H;
+      /* phase B — gather into the deck. phase C — the item comes out of it. */
+      const gather = smooth((u - A_END) / (B_END - A_END));
+      const emerge = ramp(u, C_ST, 1);
+      const last = q.notes.length - 1;
+      const dy = DECK_DY * CONFIG.artefactScale;
+      q.notes.forEach((c, k) => {
+        const colY = q.centres[k] - head, dist = Math.abs(colY);
+        const colS = 1 - 0.25 * clamp(dist / sr);
+        const colO = 1 - ramp(dist, f0, f1);
+        const depth = last - k;                          /* 0 = front */
+        const deckS = 1 - depth * (DECK_DW / 480);
+        const deckY = -q.deckH / 2 + (last - depth) * dy + deckS * c.offsetHeight / 2;
+        const y = lerp(colY, deckY, gather);
+        c.style.opacity = lerp(colO, 1, gather * gather).toFixed(3);
+        c.style.transform = 'translate3d(0,' + (y - colY).toFixed(1) + 'px,0) scale(' +
+          lerp(colS, deckS, gather).toFixed(4) + ')';
       });
-      const iu = ramp(u, 0.62, 0.94), ie = easeOut(iu);
-      q.inbox1.style.opacity = iu.toFixed(3);
-      q.inbox1.style.transform = 'translate3d(0,' + ((1 - ie) * 1.4 * EM).toFixed(1) +
-        'px,0) scale(' + (0.975 + 0.025 * ie).toFixed(3) + ')';
+      q.col.style.opacity = (1 - emerge).toFixed(3);
+      /* the item rises out of the deck's front card and settles in the middle */
+      const ee = easeOut(emerge);
+      q.item.style.opacity = ramp(emerge, 0.04, 0.55).toFixed(3);
+      q.item.style.transform = 'translate(-50%,-50%) translateY(' +
+        lerp(q.frontY, 0, ee).toFixed(1) + 'px) scale(' + lerp(0.94, 1, ee).toFixed(4) + ')';
     }
 
-    /* ---- Beat 2: alia asks. the mention chips light a moment later ---- */
-    if (q.aliaCard) {
+    if (q.ask) {
       const mu = ramp(u, 0.12, 0.52), me = easeOut(mu);
-      q.aliaCard.style.opacity = mu.toFixed(3);
-      q.aliaCard.style.transform = 'translate3d(0,' + ((1 - me) * 1.4 * EM).toFixed(1) +
+      q.ask.style.opacity = mu.toFixed(3);
+      q.ask.style.transform = 'translate3d(0,' + ((1 - me) * 1.4 * EM).toFixed(1) +
         'px,0) scale(' + (0.975 + 0.025 * me).toFixed(3) + ')';
-      q.chips.forEach((c, k) => c.style.setProperty('--chip', ramp(u, 0.42 + k * 0.08, 0.72 + k * 0.08).toFixed(3)));
+      q.chips.forEach((c, k) => c.style.setProperty('--chip-a', ramp(u, 0.42 + k * 0.08, 0.72 + k * 0.08).toFixed(3)));
     }
 
-    /* ---- Beat 3: a person replies (A) / the card closes (B) ---- */
-    if (q.replyCard) {
-      /* the card arrives carrying John's reply, then Jane's lands inside it */
-      const cu2 = ramp(u, 0.10, 0.48), ce = easeOut(cu2);
-      q.replyCard.style.opacity = cu2.toFixed(3);
-      q.replyCard.style.transform = 'translate3d(0,' + ((1 - ce) * 1.4 * EM).toFixed(1) +
+    if (q.replyPanel) {
+      const cu = ramp(u, 0.10, 0.48), ce = easeOut(cu);
+      q.replyPanel.style.opacity = cu.toFixed(3);
+      q.replyPanel.style.transform = 'translate3d(0,' + ((1 - ce) * 1.4 * EM).toFixed(1) +
         'px,0) scale(' + (0.975 + 0.025 * ce).toFixed(3) + ')';
-      q.replies.forEach((m, k) => {
-        m.style.opacity = (k === 0 ? 1 : ramp(u, 0.40, 0.74)).toFixed(3);
-      });
-      const bu = ramp(u, 0.2, 0.58), be = easeOut(bu);
-      q.inbox3.style.opacity = bu.toFixed(3);
-      q.inbox3.style.transform = 'translate3d(0,' + ((1 - be) * 1.4 * EM).toFixed(1) +
+      q.replies.forEach((m, k) => { m.style.opacity = (k === 0 ? 1 : ramp(u, 0.40, 0.74)).toFixed(3); });
+      const bu = ramp(u, 0.20, 0.58), be = easeOut(bu);
+      q.itemDone.style.opacity = bu.toFixed(3);
+      q.itemDone.style.transform = 'translate3d(0,' + ((1 - be) * 1.4 * EM).toFixed(1) +
         'px,0) scale(' + (0.975 + 0.025 * be).toFixed(3) + ')';
     }
   });
 
-  /* which tick is lit */
   const active = clamp(Math.round(p), 0, N - 1);
   if (active !== lastActive) {
     lastActive = active;
@@ -669,65 +754,45 @@ function render() {
   }
 }
 
-/* rAF loop — scrubbing has to track the scrollbar exactly, so just run it */
 (function loop() { render(); requestAnimationFrame(loop); })();
 
 function jumpTo(i) {
   const abs = beatsEl.getBoundingClientRect().top + window.scrollY;
   const topOffset = (window.innerHeight - pinEl.offsetHeight) / 2;
-  const t = (i + LEAD) / SPAN;
-  window.scrollTo({ top: Math.round(abs - topOffset + t * travel), behavior: reduce ? 'auto' : 'smooth' });
+  window.scrollTo({ top: Math.round(abs - topOffset + ((i + LEAD_IN) / SPAN) * travel),
+                    behavior: reduce ? 'auto' : 'smooth' });
 }
 
-/* ------------------------------- controls -------------------------------- */
+/* -------------------------------------------------------------- controls -- */
 const KNOBS = [
-  ['c-scale', 'artefactScale', 'v-scale', v => v.toFixed(2) + '×'],
-  ['c-width', 'artefactWidth', 'v-width', v => v.toFixed(0) + ' em'],
+  ['c-u',     'artefactScale', 'v-u',     v => v.toFixed(2) + '×'],
+  ['c-pw',    'artefactWidth', 'v-pw',    v => v.toFixed(0) + ' px'],
   ['c-sect',  'sectionVH',     'v-sect',  v => v.toFixed(0) + ' vh'],
   ['c-lap',   'overlap',       'v-lap',   v => v.toFixed(2)],
   ['c-pace',  'scrollPerBeat', 'v-pace',  v => v.toFixed(2) + '×'],
   ['c-drift', 'drift',         'v-drift', v => v.toFixed(0) + ' px'],
-  ['c-conv',  'converge',      'v-conv',  v => v.toFixed(0) + ' px']
+  ['c-conv',  'headShift',     'v-conv',  v => v.toFixed(0) + ' px']
 ];
 const DEFAULTS = { ...CONFIG };
 
 function syncUI() {
-  KNOBS.forEach(([id, key, out, fmt]) => {
-    $('#' + id).value = CONFIG[key];
-    $('#' + out).textContent = fmt(CONFIG[key]);
-  });
-  /* measured, not assumed: on narrow screens the em base drops to 7px */
-  $('#v-read').textContent = 'artefact ' + Math.round(CONFIG.artefactWidth * EM) +
-    'px wide in a ' + Math.round(window.innerHeight * CONFIG.sectionVH / 100) + 'px section';
-  $$('.variant-toggle button').forEach(b =>
-    b.setAttribute('aria-pressed', b.dataset.variant === CONFIG.variant ? 'true' : 'false'));
-  $$('.segset button').forEach(b =>
-    b.setAttribute('aria-pressed', b.dataset.bg === CONFIG.bg ? 'true' : 'false'));
+  KNOBS.forEach(([id, key, out, fmt]) => { $('#' + id).value = CONFIG[key]; $('#' + out).textContent = fmt(CONFIG[key]); });
+  $('#read').textContent = 'panel ' + Math.round(CONFIG.artefactWidth * CONFIG.artefactScale) +
+    'px in a ' + Math.round(window.innerHeight * CONFIG.sectionVH / 100) + 'px section';
+  $$('.vt button').forEach(b => b.setAttribute('aria-pressed', b.dataset.variant === CONFIG.variant ? 'true' : 'false'));
+  $$('#bar .seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.bg === CONFIG.bg ? 'true' : 'false'));
 }
-
-function save() { try { localStorage.setItem('alia-problem-proto', JSON.stringify(CONFIG)); } catch (e) {} }
+function save() { try { localStorage.setItem('alia-problem-v2', JSON.stringify(CONFIG)); } catch (e) {} }
+function togglePanel() { document.body.dataset.panel = document.body.dataset.panel === 'open' ? 'closed' : 'open'; }
 
 KNOBS.forEach(([id, key]) => $('#' + id).addEventListener('input', e => {
-  CONFIG[key] = parseFloat(e.target.value);
-  applyConfig(); save();
+  CONFIG[key] = parseFloat(e.target.value); applyConfig(); save();
 }));
-
-$$('.variant-toggle button').forEach(b => b.addEventListener('click', () => {
-  CONFIG.variant = b.dataset.variant; applyConfig(); save();
-}));
-
-$$('.segset button').forEach(b => b.addEventListener('click', () => {
-  CONFIG.bg = b.dataset.bg; applyConfig(); save();
-}));
-
+$$('.vt button').forEach(b => b.addEventListener('click', () => { CONFIG.variant = b.dataset.variant; applyConfig(); save(); }));
+$$('#bar .seg button').forEach(b => b.addEventListener('click', () => { CONFIG.bg = b.dataset.bg; applyConfig(); save(); }));
 $('#reset').addEventListener('click', () => { Object.assign(CONFIG, DEFAULTS); applyConfig(); save(); });
-
-function togglePanel() {
-  document.body.dataset.panel = document.body.dataset.panel === 'open' ? 'closed' : 'open';
-}
-$('#panelPill').addEventListener('click', togglePanel);
+$('#pill').addEventListener('click', togglePanel);
 $('#hide').addEventListener('click', togglePanel);
-
 $$('.ticks button').forEach(b => b.addEventListener('click', () => jumpTo(+b.dataset.jump)));
 
 addEventListener('keydown', e => {
@@ -735,19 +800,16 @@ addEventListener('keydown', e => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLButtonElement) return;
   const k = e.key.toLowerCase();
   if (k === 'v') { CONFIG.variant = CONFIG.variant === 'A' ? 'B' : 'A'; applyConfig(); save(); }
-  else if (k === 'c') togglePanel();
   else if (k === 'b') { CONFIG.bg = CONFIG.bg === 'violet' ? 'paper' : 'violet'; applyConfig(); save(); }
+  else if (k === 'c') togglePanel();
   else if (k === 'r') $('#reset').click();
   else if ('123'.includes(k)) jumpTo(+k - 1);
 });
 
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(applyConfig, 120); });
 
-/* restore last session, then go */
-try {
-  const saved = JSON.parse(localStorage.getItem('alia-problem-proto') || 'null');
-  if (saved) Object.assign(CONFIG, saved);
-} catch (e) {}
+try { const s = JSON.parse(localStorage.getItem('alia-problem-v2') || 'null'); if (s) Object.assign(CONFIG, s); } catch (e) {}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(applyConfig);
 applyConfig();
 </script>
 </body>
