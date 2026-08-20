@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>alia — Problem section prototype</title>
+
+<!--
+================================================================================
+  alia — "Problem" section rework · scroll-driven three-beat prototype
+  Open and scroll. Everything is in this one file.
+================================================================================
+
+  WHAT YOU CAN TWEAK
+  ------------------
+  Two ways: the CONTROLS bar (click "Controls" bottom-right — it opens along the
+  bottom edge so it never covers the centre of the section, and it remembers your
+  settings), or the CONFIG object at the top of the script block at the end of
+  this file.
+
+    artefactScale     1.0 = the product-UI sizing already used on index.html
+                      (15px message text, 36px avatar, 460px card). Default 1.4.
+    artefactWidth     Artefact column width, in units of the artefact's own em.
+                      46 = 460px at scale 1.0 — the Figma card width exactly.
+                      On-screen px = artefactWidth x artefactScale x 10.
+    sectionVH         Section height as % of viewport. 100 = full height.
+                      Set ~84 to reproduce the current 840px-in-1000px framing.
+    overlap           How much of the previous/next beat is visible during the
+                      transition. 0 = each beat clears the stage before the next
+                      arrives; 1 = long crossfade with both on screen. Default .60,
+                      which is the lowest value with no blank frame between beats.
+    scrollPerBeat     Viewport-heights of scrolling per beat. This is the PACING
+                      knob. 1.25 = calm, 0.8 = brisk, 2.0 = very slow.
+    drift             px of vertical travel a beat makes as it passes through.
+    converge          px the two side headlines converge inward (logo motif).
+    variant           Beat 3: 'A' = the two human replies · 'B' = Inbox card
+                      marked Resolved. Toggle top-left, or press V.
+    bg                Section ground: 'violet' = #b99df9, what the Figma frame
+                      actually uses · 'paper' = #f3f1e5, what the brief described.
+                      This changes the answer to "do they look lost" more than any
+                      other single setting, so it is a toggle, not a decision.
+
+  KEYS      V = swap Beat 3 variant · B = swap the section ground
+            C = show/hide the controls bar
+            1 2 3 = jump to a beat (the ticks at the bottom are clickable too)
+            (the three ticks at the bottom of the section are also clickable)
+
+  CONTINUITY WITH THE FIGMA  (frame 5215:868)
+  -------------------------------------------
+  Everything factual in here is taken from that frame, because two things in the
+  brief did not survive checking against it:
+
+  · "Yes, of course! We need to get this shipped asap." is JANE's line, Thu 9:41.
+    The brief gave it to John. John's own reply is Thu 9:34: "Oh I wasn't aware of
+    that! @Jane (CS) could you give me more context..."
+  · "2 replies" means exactly two — John 9:34 and Jane 9:41. Beat 3 now shows both.
+
+  Also aligned to the frame: Alia is capitalised; the avatar carries the dark
+  converging-lines mark on a lavender tile; the drift cards are the frame's own
+  four (Lucas Meyer / Omar Haddad / Bea Novak / Sofia Ruiz) with avatar, name and
+  channel pill; colours are sampled off the frame, not off index.html.
+
+  STILL DIVERGENT — your call
+  · Alia's Beat 2 line uses the frame's wording. The brief's tightened version is
+    the better line, but it would then differ from section 02 of the same page.
+    See the comment next to it in Beat 2.
+  · The frame's Coordination Inbox log is dated Wed Aug 12 / Thu Aug 13 / Tue Aug 13
+    — John answers before Jane asks, and Alia resolves it the day before. The
+    thread's Thu 9:20 / 9:34 / 9:41 is the one that holds together, so Beat 3 uses
+    that. The inbox dates need fixing in Figma either way.
+  · The frame calls the two people "John" and "Jane" in the thread and "John
+    Baptista" and "Jane Okafor" in the inbox. Beat 3 uses the full names.
+
+  OTHER NOTES
+  · All three beats sit on the same white card, as the frame's panels do. What
+    separates them is what is inside: an inbox item, Alia asking, two people
+    answering. The original fault was beats 2 and 3 being the SAME panel one row
+    apart — different contents in the same container fixes that; an entirely
+    different container per beat was never the requirement.
+  · Anything on a white card takes the on-white treatment — cool channel pills,
+    violet mention highlight, Figma's lavender tile for Alia — whatever the
+    ground is set to. So the Ground toggle only repaints the section itself.
+  · Artefact internals are sized in em, so artefactScale scales the whole UI
+    proportionally — one control, no relayout surprises.
+  · Nothing in here watches anyone: no eyes, lenses, radar, org charts, node
+    graphs, square grids, dashboards or metrics. Beat 1's convergence is movement
+    toward a meeting point — the logo motif — and it dissolves into one card.
+  · alia only ever surfaces and asks. In Variant A a person closes it. Variant B
+    is built exactly as briefed so you can compare, but see the note in the
+    handoff: a `Resolved` badge is alia's UI reporting a state, which is the
+    thing the client flagged. Variant A is the safer read.
+================================================================================
+-->
+
+<style>
+  :root {
+    /* ---- sampled straight off the Figma frame 5215:868 ---- */
+    --ink: #191614;
+    --text: #2c2724;
+    --muted: #6d655c;
+    --line: #e4e0d4;
+    --paper: #f3f1e5;       /* the hero / scaffold band       */
+    --lavender: #b99df9;    /* THIS section's ground in Figma */
+    --surface: #ffffff;     /* cards are pure white on it     */
+    --wash: #efece2;
+    --chip-bg: #f0eff2;     /* channel pills — cool, for white  */
+    --alia-tile: #cdb8fb;   /* Alia's avatar tile, one step off the ground */
+    --mention-rgb: 255 255 255;  /* mention chip, on lavender */
+    --mention-a: 64%;
+    --accent: #7d5ba6;
+    --accent-ink: #6b4c90;
+    --mono-dim: #5f584f;
+    --mono-ink: #4a443d;
+    --section-bg: var(--lavender);
+
+    --max: 1500px;
+    --gutter: clamp(22px, 3vw, 56px);
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --sans: Aptos, "Geist", "Soehne", "SF Pro Display", -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif;
+    --mono: "Geist Mono", "SF Mono", ui-monospace, monospace;
+
+    /* ---- driven by JS / the controls panel ---- */
+    --s: 1.4;              /* artefact scale */
+    --artw: 46;            /* artefact width, in artefact-em */
+    --em: calc(var(--s) * 10px);  /* 1 artefact-em in px */
+    --section-h: 100vh;    /* section height */
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--paper); color: var(--text);
+    font-family: var(--sans); font-size: 16px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  }
+
+  /* ============ scaffolding above and below (placeholder, not design) ======= */
+  .scaffold { min-height: 74vh; display: grid; place-items: center; padding: 10vh var(--gutter); text-align: center; }
+  .scaffold .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--mono-dim); }
+  .scaffold p { margin: 18px auto 0; max-width: 30ch; font-size: clamp(19px, 2.2vw, 27px); line-height: 1.3; letter-spacing: -.025em; color: var(--muted); }
+  .cue { margin-top: 46px; display: inline-grid; justify-items: center; gap: 10px; font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--mono-dim); }
+  .cue i { display: block; width: 1px; height: 46px; background: linear-gradient(180deg, var(--line), transparent); animation: cue 3.4s var(--ease) infinite; transform-origin: top; }
+  @keyframes cue { 0%, 100% { opacity: .35; transform: scaleY(.7); } 45% { opacity: 1; transform: scaleY(1); } }
+  .rule { height: 1px; background: var(--line); }
+
+  /* ============================ the three beats ============================ */
+  #beats { position: relative; background: var(--section-bg); }
+  body[data-bg="paper"] { --section-bg: var(--paper); --chip-bg: #e9e5d7; --mention-rgb: 125 91 166; --mention-a: 26%; --alia-tile: var(--lavender); }
+  body[data-bg="paper"] #beats { box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line); }
+  #pin {
+    position: sticky; top: calc((100vh - var(--section-h)) / 2);
+    height: var(--section-h); overflow: hidden;
+  }
+  .beat { position: absolute; inset: 0; display: grid; align-items: center; will-change: opacity, transform; }
+  .beat-in {
+    width: 100%; max-width: var(--max); margin-inline: auto; padding-inline: var(--gutter);
+    display: grid; align-items: center; gap: clamp(18px, 3.2vw, 60px);
+    grid-template-columns: minmax(0, 1fr) calc(var(--artw) * var(--em)) minmax(0, 1fr);
+  }
+  .hl {
+    font-size: clamp(25px, 2.9vw, 46px); line-height: 1.02; letter-spacing: -.032em;
+    font-weight: 500; color: var(--ink); will-change: transform; margin: 0;
+    text-wrap: balance;
+  }
+  .hl.r { text-align: right; }
+
+  /* the artefact stage. everything inside is em-based off --s */
+  .stage {
+    position: relative; width: 100%; font-size: var(--em);
+    display: grid; place-items: center;
+  }
+
+  /* ---------------------------- inbox card -------------------------------- */
+  .mcard {
+    width: 100%; background: var(--surface); border-radius: 1em;
+    padding: 1.8em 2em 2em; text-align: left;
+    box-shadow: 0 1.8em 4em -2.2em rgba(25, 22, 20, .3);
+    will-change: transform, opacity;
+  }
+  .badge {
+    display: inline-block; font-family: var(--mono); font-size: .95em;
+    letter-spacing: .085em; text-transform: uppercase; color: var(--accent-ink);
+    border: 1px solid var(--accent); border-radius: .3em; padding: .4em .75em;
+    margin-bottom: 1.2em;
+  }
+  .badge.done { color: var(--mono-ink); border-color: transparent; background: var(--chip-bg); }
+  .mcard .body {
+    font-size: 1.5em; line-height: 1.45; font-weight: 400;
+    letter-spacing: -.014em; color: var(--ink);
+  }
+
+  /* --------- drifting Slack notifications: avatar · name · channel --------- */
+  .ncard {
+    position: absolute; top: 50%; left: 50%; width: 30em;
+    background: var(--surface); border-radius: 1em; padding: 1.4em 1.6em;
+    text-align: left; box-shadow: 0 1.4em 3em -1.8em rgba(25, 22, 20, .28);
+    display: grid; grid-template-columns: 3.6em 1fr; gap: 1.2em; align-items: start;
+    will-change: transform, opacity;
+  }
+  /* on a white card: cool pills, violet mention highlight, Figma's lavender
+     tile for Alia — regardless of what the section ground is doing */
+  .mcard, .ncard { --chip-bg: #f0eff2; --mention-rgb: 125 91 166; --mention-a: 26%;
+                   --alia-tile: var(--lavender); }
+  .ncard .who { display: flex; align-items: center; gap: .8em; margin-bottom: .45em; flex-wrap: wrap; }
+  .ncard .txt { font-size: 1.45em; line-height: 1.42; letter-spacing: -.01em; color: var(--text); }
+
+  /* ------------------------------ messages -------------------------------- */
+  .msg { width: 100%; display: grid; grid-template-columns: 3.6em 1fr; gap: 1.2em; align-items: start; text-align: left; will-change: transform, opacity; }
+  .msg + .msg { margin-top: 1.6em; }
+  .av {
+    width: 3.6em; height: 3.6em; border-radius: .8em; overflow: hidden;
+    display: grid; place-items: center; background: var(--wash); flex: none;
+  }
+  .av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .av.is-alia { background: var(--alia-tile); }
+  .av.is-alia svg { width: 68%; height: 68%; display: block; }
+  .mhd { display: flex; align-items: center; gap: .8em; margin-bottom: .45em; flex-wrap: wrap; }
+  .n { font-size: 1.5em; font-weight: 600; letter-spacing: -.012em; color: var(--ink); }
+  .ch { font-size: 1.2em; background: var(--chip-bg); color: var(--mono-ink); padding: .25em .6em; border-radius: .4em; white-space: nowrap; }
+  .app { font-family: var(--mono); font-size: .95em; letter-spacing: .08em; text-transform: uppercase; background: var(--chip-bg); color: var(--mono-ink); padding: .3em .55em; border-radius: .3em; }
+  .tm { font-family: var(--mono); font-size: 1.15em; color: var(--mono-dim); }
+  .say { font-size: 1.5em; line-height: 1.5; color: var(--text); letter-spacing: -.008em; }
+  .mn {
+    color: var(--accent-ink); font-weight: 500; white-space: nowrap;
+    padding: .1em .28em; margin: 0 -.28em; border-radius: .2em;
+    background: rgb(var(--mention-rgb) / calc(var(--mention-a) * var(--chip, 1)));
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  }
+
+  /* thin "2 replies" divider */
+  .divider { display: flex; align-items: center; gap: 1.1em; width: 100%; margin-bottom: 1.6em; will-change: opacity; }
+  .divider .lbl { font-family: var(--mono); font-size: 1.15em; letter-spacing: .05em; color: var(--accent-ink); white-space: nowrap; }
+  .divider .ln { height: 1px; background: rgba(25, 22, 20, .16); flex: 1; }
+  .b3 { width: 100%; }
+  body[data-variant="A"] .v-b, body[data-variant="B"] .v-a { display: none; }
+
+  /* ------------------------------ beat ticks ------------------------------- */
+  .ticks { position: absolute; left: 50%; bottom: clamp(20px, 3.4vh, 40px); transform: translateX(-50%); display: flex; gap: 12px; z-index: 4; }
+  .ticks button {
+    appearance: none; background: none; border: 0; padding: 10px 0 0; margin: 0; cursor: pointer;
+    font-family: var(--mono); font-size: 9px; letter-spacing: .1em; color: var(--mono-dim);
+    display: grid; justify-items: center; gap: 7px; opacity: .5; transition: opacity .5s var(--ease);
+  }
+  .ticks button i { display: block; width: 26px; height: 1px; background: var(--ink); transition: background .5s var(--ease), width .5s var(--ease); }
+  .ticks button[aria-current="true"] { opacity: 1; }
+  .ticks button[aria-current="true"] i { background: var(--accent); width: 40px; }
+
+  /* ============================== controls =================================
+     Both live at the edges: the variant toggle top-left, the knobs in a bar
+     along the bottom. Nothing ever sits over the centre band, because that is
+     the band you are trying to judge. */
+  .variant-toggle {
+    position: fixed; left: 16px; top: 16px; z-index: 20;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 3px;
+    padding: 6px 7px 6px 11px; box-shadow: 0 10px 26px -20px rgba(25, 22, 20, .4);
+    font-family: var(--mono); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: var(--mono-dim);
+  }
+  .variant-toggle .seg { display: flex; gap: 4px; }
+  .btn {
+    appearance: none; cursor: pointer; font-family: var(--mono); font-size: 10px;
+    letter-spacing: .07em; text-transform: uppercase; padding: 5px 9px;
+    border: 1px solid var(--line); border-radius: 2px; background: transparent;
+    color: var(--mono-ink); transition: border-color .3s var(--ease), color .3s var(--ease), background .3s var(--ease);
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent-ink); }
+  .btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  #panelPill {
+    position: fixed; right: 16px; bottom: 16px; z-index: 20;
+    background: var(--surface); box-shadow: 0 10px 26px -20px rgba(25, 22, 20, .4);
+    padding: 7px 12px;
+  }
+  #panelBar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    background: var(--surface); border-top: 1px solid var(--line);
+    box-shadow: 0 -14px 34px -26px rgba(25, 22, 20, .5);
+    padding: 9px var(--gutter) 12px; font-family: var(--mono); font-size: 10px; color: var(--mono-ink);
+  }
+  #panelBar .bar-hd {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 9px;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--mono-dim);
+  }
+  #panelBar .bar-hd .sp { flex: 1; height: 1px; background: var(--line); }
+  #panelBar .bar-hd .segset { display: flex; align-items: center; gap: 5px; }
+  #panelBar .bar-hd #v-read { color: var(--accent-ink); letter-spacing: .04em; font-variant-numeric: tabular-nums; text-transform: none; }
+  .knobs { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 6px 24px; }
+  .knob .lab { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 3px; }
+  .knob .lab b { font-weight: 500; letter-spacing: .04em; color: var(--mono-ink); }
+  .knob .lab span { color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 100%; margin: 0; accent-color: var(--accent); height: 13px; display: block; }
+  body[data-panel="open"]  #panelPill { display: none; }
+  body[data-panel="closed"] #panelBar { display: none; }
+  body[data-panel="open"] .ticks { bottom: 108px; }
+
+  /* ============================== responsive =============================== */
+  @media (max-width: 1000px) {
+    :root { --em: calc(var(--s) * 7px); }
+    .beat-in { grid-template-columns: 1fr; justify-items: center; gap: clamp(20px, 4.5vw, 40px); }
+    .hl, .hl.r { text-align: center; font-size: clamp(24px, 5.4vw, 36px); }
+    .stage { width: min(calc(var(--artw) * var(--em)), 100%); }
+    .knobs { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); gap: 6px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .cue i { animation: none; }
+  }
+</style>
+</head>
+<body data-variant="A" data-panel="closed" data-bg="violet">
+
+<!-- ======================= scaffolding: hero placeholder ==================== -->
+<section class="scaffold">
+  <div>
+    <span class="tag">placeholder · hero sits here</span>
+    <p>Catch misalignment. Resolve blockers. Keep commitments moving.</p>
+    <span class="cue"><i></i>scroll</span>
+  </div>
+</section>
+<div class="rule"></div>
+
+<!-- ============================== the section ============================== -->
+<div id="beats">
+  <div id="pin">
+
+    <!-- ---------------------------- BEAT 1 ---------------------------------- -->
+    <section class="beat" data-beat="0" aria-label="Beat 1 — noticed">
+      <div class="beat-in">
+        <h2 class="hl l">The misalignment</h2>
+        <div class="stage">
+          <!-- Drifting notifications. Cast, channels and copy are the four cards
+               from the Figma drift, so nothing here is a second version of a line
+               that already exists on the page. -->
+          <article class="ncard" data-n="0">
+            <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
+            <div><div class="who"><span class="n">Lucas Meyer</span><span class="ch">Private channel</span></div>
+            <div class="txt">Q3 priority is increasing revenue but the engineering team is prioritizing cost reduction in infrastructure.</div></div>
+          </article>
+          <article class="ncard" data-n="1">
+            <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
+            <div><div class="who"><span class="n">Omar Haddad</span><span class="ch">#leadership</span></div>
+            <div class="txt">Both the CRM and the Growth team are creating the new onboarding flow. Shouldn't CRM lead it since growth is late on Q3 KPIs?</div></div>
+          </article>
+          <article class="ncard" data-n="2">
+            <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
+            <div><div class="who"><span class="n">Bea Novak</span><span class="ch">#design</span></div>
+            <div class="txt">The wireframe is top priority and the tech team is waiting on it. Is there any update on the wireframe progress?</div></div>
+          </article>
+          <article class="ncard" data-n="3">
+            <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
+            <div><div class="who"><span class="n">Sofia Ruiz</span><span class="ch">#tech</span></div>
+            <div class="txt">The G-suite integration has no owner and due date. Who can take this, and by when?</div></div>
+          </article>
+          <!-- what they converge into -->
+          <article class="mcard" data-role="inbox-1">
+            <span class="badge">Misalignment</span>
+            <div class="body">John promised a new feature to the client. We have a call with them soon but there is no sign of the feature in Tech.</div>
+          </article>
+        </div>
+        <h2 class="hl r">nobody noticed.</h2>
+      </div>
+    </section>
+
+    <!-- ---------------------------- BEAT 2 ---------------------------------- -->
+    <section class="beat" data-beat="1" aria-label="Beat 2 — nudged">
+      <div class="beat-in">
+        <h2 class="hl l">Alia noticed.</h2>
+        <div class="stage">
+          <article class="mcard" data-role="alia-card">
+          <div class="msg">
+            <span class="av is-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.7" fill="var(--ink)"/><path d="M2.4 11.3 H 19.6" stroke="var(--alia-tile)" stroke-width="2.1"/><path d="M6.4 18.6 L 19.6 11.3" stroke="var(--alia-tile)" stroke-width="2.1"/></svg></span>
+            <div>
+              <div class="mhd"><span class="n">Alia</span><span class="app">app</span><span class="tm">Thu 9:20</span></div>
+              <!-- Verbatim from the CS-tech thread in Figma section 02. The brief's
+                   tighter rewrite was "The client was promised this feature by next
+                   week. Where does it stand?" — better line, but it has to change in
+                   BOTH places or the page says the same thing two ways. -->
+              <div class="say">Hello <span class="mn" data-chip="0">@Jane (CS)</span> and <span class="mn" data-chip="1">@John (Tech)</span>. The new feature was promised to the client to be ready by next week, how is the progress on that?</div>
+            </div>
+          </div>
+          </article>
+        </div>
+        <h2 class="hl r">One thread.</h2>
+      </div>
+    </section>
+
+    <!-- ---------------------------- BEAT 3 ---------------------------------- -->
+    <section class="beat" data-beat="2" aria-label="Beat 3 — resolved">
+      <div class="beat-in">
+        <h2 class="hl l">Two replies.</h2>
+        <div class="stage">
+          <div class="b3">
+            <!-- Variant A — two people close it, in the order and wording the
+                 Figma thread actually uses, so "2 replies" means two replies. -->
+            <div class="v-a">
+              <article class="mcard" data-role="reply-card">
+              <div class="divider"><span class="lbl">2 replies</span><span class="ln"></span></div>
+              <div class="msg" data-role="reply-1">
+                <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
+                <div>
+                  <div class="mhd"><span class="n">John Baptista</span><span class="ch">#tech</span><span class="tm">Thu 9:34</span></div>
+                  <div class="say">Oh I wasn't aware of that! <span class="mn">@Jane (CS)</span> could you give me more context of what's needed for this feature? I can organize my team to deliver it.</div>
+                </div>
+              </div>
+              <div class="msg" data-role="reply-2">
+                <span class="av"><img src="data:image/jpeg;base64,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" alt=""></span>
+                <div>
+                  <div class="mhd"><span class="n">Jane Okafor</span><span class="ch">#customer-success</span><span class="tm">Thu 9:41</span></div>
+                  <div class="say">Yes, of course! We need to get this shipped asap.</div>
+                </div>
+              </div>
+              </article>
+            </div>
+            <!-- Variant B — the Beat 1 card, closed -->
+            <div class="v-b">
+              <article class="mcard" data-role="inbox-3">
+                <span class="badge done">Resolved</span>
+                <div class="body">John promised a new feature to the client. We have a call with them soon but there is no sign of the feature in Tech.</div>
+              </article>
+            </div>
+          </div>
+        </div>
+        <h2 class="hl r">Settled.</h2>
+      </div>
+    </section>
+
+    <nav class="ticks" aria-label="Jump to beat">
+      <button type="button" data-jump="0"><i></i>01</button>
+      <button type="button" data-jump="1"><i></i>02</button>
+      <button type="button" data-jump="2"><i></i>03</button>
+    </nav>
+  </div>
+</div>
+
+<div class="rule"></div>
+<!-- ==================== scaffolding: next section placeholder =============== -->
+<section class="scaffold">
+  <div>
+    <span class="tag">placeholder · next section</span>
+    <p>Then it keeps going until it closes.</p>
+  </div>
+</section>
+
+<!-- ================================ controls =============================== -->
+<div class="variant-toggle">
+  Beat 3
+  <span class="seg">
+    <button type="button" class="btn" data-variant="A" aria-pressed="true">A · reply</button>
+    <button type="button" class="btn" data-variant="B" aria-pressed="false">B · card</button>
+  </span>
+</div>
+
+<button type="button" class="btn" id="panelPill">Controls</button>
+
+<div id="panelBar">
+  <div class="bar-hd">
+    <span>Controls</span>
+    <span id="v-read" title="What the current settings work out to on this screen">600 × 900 px</span>
+    <span class="sp"></span>
+    <span class="segset">Ground
+      <button type="button" class="btn" data-bg="violet" aria-pressed="true">Lavender</button>
+      <button type="button" class="btn" data-bg="paper" aria-pressed="false">Paper</button>
+    </span>
+    <button type="button" class="btn" id="reset">Reset</button>
+    <button type="button" class="btn" id="hide">Hide</button>
+  </div>
+  <div class="knobs">
+    <div class="knob" title="1.00x = the product-UI sizing in the Figma frame (15px message text, 36px avatar, 460px card)">
+      <div class="lab"><b>Artefact scale</b><span id="v-scale">1.40×</span></div>
+      <input type="range" id="c-scale" min="0.8" max="2.4" step="0.05" value="1.4">
+    </div>
+    <div class="knob" title="Artefact column width, in units of the artefact's own em">
+      <div class="lab"><b>Width</b><span id="v-width">46 em</span></div>
+      <input type="range" id="c-width" min="26" max="62" step="1" value="46">
+    </div>
+    <div class="knob" title="Section height as a percentage of the viewport">
+      <div class="lab"><b>Section</b><span id="v-sect">100 vh</span></div>
+      <input type="range" id="c-sect" min="70" max="115" step="1" value="100">
+    </div>
+    <div class="knob" title="0 = each beat clears the stage before the next arrives · 1 = long crossfade, both on screen at once">
+      <div class="lab"><b>Overlap</b><span id="v-lap">0.60</span></div>
+      <input type="range" id="c-lap" min="0" max="1" step="0.05" value="0.6">
+    </div>
+    <div class="knob" title="Pacing — viewport-heights of scrolling per beat">
+      <div class="lab"><b>Scroll / beat</b><span id="v-pace">1.25×</span></div>
+      <input type="range" id="c-pace" min="0.6" max="2.5" step="0.05" value="1.25">
+    </div>
+    <div class="knob" title="How far a beat travels vertically as it passes through">
+      <div class="lab"><b>Drift</b><span id="v-drift">56 px</span></div>
+      <input type="range" id="c-drift" min="0" max="160" step="4" value="56">
+    </div>
+    <div class="knob" title="How far the two side headlines converge inward as a beat centres">
+      <div class="lab"><b>Converge</b><span id="v-conv">44 px</span></div>
+      <input type="range" id="c-conv" min="0" max="140" step="4" value="44">
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   CONFIG — the defaults. The controls panel writes over these at runtime and
+   remembers your last settings in localStorage. Hit Reset to come back here.
+   ========================================================================== */
+const CONFIG = {
+  artefactScale : 1.40,   /* 1.0 = the Figma frame's own product-UI sizing    */
+  artefactWidth : 46,     /* artefact column width, in artefact-em (46 = 460px
+                             at 1.0, which is the Figma card width)           */
+  sectionVH     : 100,    /* section height, % of viewport                    */
+  overlap       : 0.60,   /* 0 = clear hold between beats · 1 = long crossfade */
+  scrollPerBeat : 1.25,   /* viewport-heights of scroll per beat (pacing)     */
+  drift         : 56,     /* px a beat travels vertically as it passes        */
+  converge      : 44,     /* px the side headlines converge inward            */
+  variant       : 'A',    /* Beat 3: 'A' replies · 'B' resolved card          */
+  bg            : 'violet'/* section ground: 'violet' (as in Figma) · 'paper'  */
+};
+
+/* how much lead-in before beat 1 centres, and lead-out after beat 3, in beats */
+const LEAD = 0.35;
+
+/* ------------------------------- plumbing -------------------------------- */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const root    = document.documentElement;
+const beatsEl = $('#beats');
+const pinEl   = $('#pin');
+const beats   = $$('.beat');
+const N       = beats.length;
+const reduce  = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const clamp  = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
+const smooth = t => { t = clamp(t); return t * t * (3 - 2 * t); };
+const easeOut = t => { t = clamp(t); return 1 - Math.pow(1 - t, 3); };
+const ramp   = (v, a, b) => smooth((v - a) / (b - a));
+const lerp   = (a, b, t) => a + (b - a) * t;
+
+/* per-beat cached nodes */
+const parts = beats.map(b => ({
+  el      : b,
+  hl      : [$('.hl.l', b), $('.hl.r', b)],
+  ncards  : $$('.ncard', b),
+  inbox1  : $('[data-role="inbox-1"]', b),
+  aliaCard: $('[data-role="alia-card"]', b),
+  chips   : $$('.mn', b),
+  replyCard: $('[data-role="reply-card"]', b),
+  replies : $$('[data-role^="reply-"]', b),
+  inbox3  : $('[data-role="inbox-3"]', b)
+}));
+
+/* Beat 1 — where each notification starts, in artefact-em, relative to the
+   convergence point. They drift up and inward and dissolve into the card.     */
+const DRIFT_START = [
+  { x: -9.5, y: 16, r: -0.7 },
+  { x:  9.0, y: 23, r:  0.6 },
+  { x: -8.5, y: 29, r:  0.5 },
+  { x:  9.5, y: 35, r: -0.5 }
+];
+const DRIFT_END = { x: 0, y: -1.2 };
+
+let EM = 15;          /* px per artefact-em, read from the DOM */
+let travel = 1;       /* px of scroll while the section is pinned */
+const SPAN = (N - 1) + 2 * LEAD;
+
+/* --------------------------- layout / config ----------------------------- */
+function applyConfig() {
+  root.style.setProperty('--s', CONFIG.artefactScale);
+  root.style.setProperty('--artw', CONFIG.artefactWidth);
+  root.style.setProperty('--section-h', CONFIG.sectionVH + 'vh');
+  document.body.dataset.variant = CONFIG.variant;
+  document.body.dataset.bg = CONFIG.bg;
+
+  const vh = window.innerHeight;
+  const sectionPx = vh * CONFIG.sectionVH / 100;
+  beatsEl.style.height = Math.round(sectionPx + SPAN * CONFIG.scrollPerBeat * vh) + 'px';
+
+  EM = parseFloat(getComputedStyle($('.stage')).fontSize) || 15;
+  travel = Math.max(1, beatsEl.offsetHeight - pinEl.offsetHeight);
+  syncUI();
+  render();
+}
+
+/* ------------------------------- the frame -------------------------------- */
+let lastActive = -1;
+
+function render() {
+  const r = beatsEl.getBoundingClientRect();
+  const topOffset = (window.innerHeight - pinEl.offsetHeight) / 2;
+  const t = clamp((topOffset - r.top) / travel);
+  const p = -LEAD + t * SPAN;
+
+  const outer = 0.35 + 0.45 * CONFIG.overlap;          /* |d| where a beat is gone   */
+  const inner = outer - (0.10 + 0.30 * CONFIG.overlap); /* |d| where it starts fading */
+  const drift = reduce ? 0 : CONFIG.drift;
+  const conv  = reduce ? 0 : CONFIG.converge;
+
+  parts.forEach((q, i) => {
+    const d = p - i;
+    const a = Math.abs(d);
+
+    /* beat opacity — plateau in the middle, crossfade at the edges */
+    const alpha = a <= inner ? 1 : a >= outer ? 0 : 1 - smooth((a - inner) / (outer - inner));
+    q.el.style.opacity = alpha.toFixed(3);
+    q.el.style.visibility = alpha < 0.004 ? 'hidden' : 'visible';
+    q.el.style.transform = 'translate3d(0,' + (-d * drift).toFixed(1) + 'px,0)';
+    if (alpha < 0.004) return;   /* nothing else to compute while invisible */
+
+    /* headlines converge inward as the beat arrives at centre */
+    const near = 1 - clamp(a / 0.8);
+    const off  = (1 - easeOut(near)) * conv;
+    q.hl[0].style.transform = 'translate3d(' + (-off).toFixed(1) + 'px,0,0)';
+    q.hl[1].style.transform = 'translate3d(' + ( off).toFixed(1) + 'px,0,0)';
+
+    /* u = this beat's own timeline: 0 as it starts arriving, 1 once centred.
+       beat 1 starts at the exact moment the section pins, so no part of the
+       convergence happens off-stage. */
+    const uFrom = i === 0 ? -LEAD : -0.5;
+    const u = reduce ? 1 : clamp((d - uFrom) / (-0.02 - uFrom));
+
+    /* ---- Beat 1: notifications converge, then the one card resolves ---- */
+    if (q.ncards.length) {
+      q.ncards.forEach((c, k) => {
+        const s0 = DRIFT_START[k] || DRIFT_START[0];
+        const cu = clamp((u - 0.02 - k * 0.075) / 0.52);
+        const e  = 0.4 * cu + 0.6 * smooth(cu);   /* near-linear, soft at both ends */
+        const x  = lerp(s0.x, DRIFT_END.x, e) * EM;
+        const y  = lerp(s0.y, DRIFT_END.y, e) * EM;
+        const sc = 1 - 0.13 * e;
+        c.style.opacity = (ramp(cu, 0, 0.17) * (1 - ramp(cu, 0.45, 0.85))).toFixed(3);
+        c.style.transform = 'translate3d(-50%,-50%,0) translate3d(' +
+          x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) rotate(' + s0.r + 'deg) scale(' + sc.toFixed(3) + ')';
+      });
+      const iu = ramp(u, 0.62, 0.94), ie = easeOut(iu);
+      q.inbox1.style.opacity = iu.toFixed(3);
+      q.inbox1.style.transform = 'translate3d(0,' + ((1 - ie) * 1.4 * EM).toFixed(1) +
+        'px,0) scale(' + (0.975 + 0.025 * ie).toFixed(3) + ')';
+    }
+
+    /* ---- Beat 2: alia asks. the mention chips light a moment later ---- */
+    if (q.aliaCard) {
+      const mu = ramp(u, 0.12, 0.52), me = easeOut(mu);
+      q.aliaCard.style.opacity = mu.toFixed(3);
+      q.aliaCard.style.transform = 'translate3d(0,' + ((1 - me) * 1.4 * EM).toFixed(1) +
+        'px,0) scale(' + (0.975 + 0.025 * me).toFixed(3) + ')';
+      q.chips.forEach((c, k) => c.style.setProperty('--chip', ramp(u, 0.42 + k * 0.08, 0.72 + k * 0.08).toFixed(3)));
+    }
+
+    /* ---- Beat 3: a person replies (A) / the card closes (B) ---- */
+    if (q.replyCard) {
+      /* the card arrives carrying John's reply, then Jane's lands inside it */
+      const cu2 = ramp(u, 0.10, 0.48), ce = easeOut(cu2);
+      q.replyCard.style.opacity = cu2.toFixed(3);
+      q.replyCard.style.transform = 'translate3d(0,' + ((1 - ce) * 1.4 * EM).toFixed(1) +
+        'px,0) scale(' + (0.975 + 0.025 * ce).toFixed(3) + ')';
+      q.replies.forEach((m, k) => {
+        m.style.opacity = (k === 0 ? 1 : ramp(u, 0.40, 0.74)).toFixed(3);
+      });
+      const bu = ramp(u, 0.2, 0.58), be = easeOut(bu);
+      q.inbox3.style.opacity = bu.toFixed(3);
+      q.inbox3.style.transform = 'translate3d(0,' + ((1 - be) * 1.4 * EM).toFixed(1) +
+        'px,0) scale(' + (0.975 + 0.025 * be).toFixed(3) + ')';
+    }
+  });
+
+  /* which tick is lit */
+  const active = clamp(Math.round(p), 0, N - 1);
+  if (active !== lastActive) {
+    lastActive = active;
+    $$('.ticks button').forEach((b, i) => b.setAttribute('aria-current', i === active ? 'true' : 'false'));
+  }
+}
+
+/* rAF loop — scrubbing has to track the scrollbar exactly, so just run it */
+(function loop() { render(); requestAnimationFrame(loop); })();
+
+function jumpTo(i) {
+  const abs = beatsEl.getBoundingClientRect().top + window.scrollY;
+  const topOffset = (window.innerHeight - pinEl.offsetHeight) / 2;
+  const t = (i + LEAD) / SPAN;
+  window.scrollTo({ top: Math.round(abs - topOffset + t * travel), behavior: reduce ? 'auto' : 'smooth' });
+}
+
+/* ------------------------------- controls -------------------------------- */
+const KNOBS = [
+  ['c-scale', 'artefactScale', 'v-scale', v => v.toFixed(2) + '×'],
+  ['c-width', 'artefactWidth', 'v-width', v => v.toFixed(0) + ' em'],
+  ['c-sect',  'sectionVH',     'v-sect',  v => v.toFixed(0) + ' vh'],
+  ['c-lap',   'overlap',       'v-lap',   v => v.toFixed(2)],
+  ['c-pace',  'scrollPerBeat', 'v-pace',  v => v.toFixed(2) + '×'],
+  ['c-drift', 'drift',         'v-drift', v => v.toFixed(0) + ' px'],
+  ['c-conv',  'converge',      'v-conv',  v => v.toFixed(0) + ' px']
+];
+const DEFAULTS = { ...CONFIG };
+
+function syncUI() {
+  KNOBS.forEach(([id, key, out, fmt]) => {
+    $('#' + id).value = CONFIG[key];
+    $('#' + out).textContent = fmt(CONFIG[key]);
+  });
+  /* measured, not assumed: on narrow screens the em base drops to 7px */
+  $('#v-read').textContent = 'artefact ' + Math.round(CONFIG.artefactWidth * EM) +
+    'px wide in a ' + Math.round(window.innerHeight * CONFIG.sectionVH / 100) + 'px section';
+  $$('.variant-toggle button').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.variant === CONFIG.variant ? 'true' : 'false'));
+  $$('.segset button').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.bg === CONFIG.bg ? 'true' : 'false'));
+}
+
+function save() { try { localStorage.setItem('alia-problem-proto', JSON.stringify(CONFIG)); } catch (e) {} }
+
+KNOBS.forEach(([id, key]) => $('#' + id).addEventListener('input', e => {
+  CONFIG[key] = parseFloat(e.target.value);
+  applyConfig(); save();
+}));
+
+$$('.variant-toggle button').forEach(b => b.addEventListener('click', () => {
+  CONFIG.variant = b.dataset.variant; applyConfig(); save();
+}));
+
+$$('.segset button').forEach(b => b.addEventListener('click', () => {
+  CONFIG.bg = b.dataset.bg; applyConfig(); save();
+}));
+
+$('#reset').addEventListener('click', () => { Object.assign(CONFIG, DEFAULTS); applyConfig(); save(); });
+
+function togglePanel() {
+  document.body.dataset.panel = document.body.dataset.panel === 'open' ? 'closed' : 'open';
+}
+$('#panelPill').addEventListener('click', togglePanel);
+$('#hide').addEventListener('click', togglePanel);
+
+$$('.ticks button').forEach(b => b.addEventListener('click', () => jumpTo(+b.dataset.jump)));
+
+addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLButtonElement) return;
+  const k = e.key.toLowerCase();
+  if (k === 'v') { CONFIG.variant = CONFIG.variant === 'A' ? 'B' : 'A'; applyConfig(); save(); }
+  else if (k === 'c') togglePanel();
+  else if (k === 'b') { CONFIG.bg = CONFIG.bg === 'violet' ? 'paper' : 'violet'; applyConfig(); save(); }
+  else if (k === 'r') $('#reset').click();
+  else if ('123'.includes(k)) jumpTo(+k - 1);
+});
+
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(applyConfig, 120); });
+
+/* restore last session, then go */
+try {
+  const saved = JSON.parse(localStorage.getItem('alia-problem-proto') || 'null');
+  if (saved) Object.assign(CONFIG, saved);
+} catch (e) {}
+applyConfig();
+</script>
+</body>
+</html>
