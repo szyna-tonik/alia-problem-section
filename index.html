@@ -240,6 +240,9 @@
     overlap         0 = each beat clears before the next arrives · 1 = long
                     crossfade. Default .60, the lowest value with no blank frame.
     scrollPerBeat   Pacing, in viewport-heights per beat.
+    scrollEase      scroll glide. The page scrolls natively; the animation eases
+                    toward it. 0.10 by default, 0 turns it off, lower glides
+                    longer.
     drift           px a beat travels vertically as it passes.
     headShift       px the headlines travel vertically, on top of drift —
                     the gap between the outgoing and the incoming pair.
@@ -740,6 +743,9 @@ const CONFIG = {
   headShift     : 140,    /* px the headlines travel vertically, on top of
                              drift — this is the gap between the outgoing and
                              the incoming headline pair                      */
+  scrollEase    : 0.10,   /* how much of the gap to the real scroll position the
+                             animation closes each frame at 60fps. 0 = off, off
+                             the shelf Lenis sits around here. Lower is glidier. */
   bg            : 'violet',
   voice         : 'people' /* beat 1's cards: 'people' unaware · 'alia' reading
                               the gap out loud. See the note at the top.      */
@@ -830,6 +836,7 @@ function applyConfig() {
     sThread.style.height = keep;
   }
   travel = Math.max(1, beatsEl.offsetHeight - pinEl.offsetHeight);
+  pSmooth = null;                       /* re-sync after a relayout */
 
   /* how far each half of beat 1's line has to travel to sit PART_GAP apart.
      offsetLeft/offsetWidth, not getBoundingClientRect — those already carry the
@@ -858,10 +865,30 @@ function applyConfig() {
 
 let lastActive = -1;
 
-function render() {
+/* Smooth scroll, the honest way: the page keeps scrolling natively and it is
+   the ANIMATION that lags, easing toward wherever the scrollbar actually is.
+   Nothing is hijacked, so the scrollbar, the keyboard, trackpad inertia and
+   ctrl+F all behave normally — the section just glides instead of tracking the
+   wheel one to one.
+   scrollEase is the fraction of the remaining distance closed per frame at
+   60fps, and the exponent makes that frame-rate independent, so a 120Hz screen
+   glides the same as a 60Hz one. 0 turns it off. */
+let pSmooth = null, lastT = 0;
+
+function render(now) {
   const r = beatsEl.getBoundingClientRect();
   const topOffset = (window.innerHeight - pinEl.offsetHeight) / 2;
-  const p = -LEAD_IN + clamp((topOffset - r.top) / travel) * SPAN;
+  const pRaw = -LEAD_IN + clamp((topOffset - r.top) / travel) * SPAN;
+
+  const dt = lastT ? Math.min(0.05, ((now || 0) - lastT) / 1000) : 1 / 60;
+  lastT = now || 0;
+  const L = reduce ? 0 : CONFIG.scrollEase;
+  if (pSmooth === null || L <= 0) pSmooth = pRaw;
+  else {
+    pSmooth += (pRaw - pSmooth) * (1 - Math.pow(1 - L, dt * 60));
+    if (Math.abs(pRaw - pSmooth) < 0.0004) pSmooth = pRaw;
+  }
+  const p = pSmooth;
 
   const outer = 0.35 + 0.45 * CONFIG.overlap;
   const inner = outer - (0.10 + 0.30 * CONFIG.overlap);
@@ -972,7 +999,7 @@ function render() {
   }
 }
 
-(function loop() { render(); requestAnimationFrame(loop); })();
+(function loop(now) { render(now); requestAnimationFrame(loop); })();
 
 function jumpTo(i) {
   const abs = beatsEl.getBoundingClientRect().top + window.scrollY;
