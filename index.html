@@ -518,6 +518,14 @@
   .marks button[aria-current="true"] { color: var(--ink); }
   .marks button[aria-current="true"] i { width: 4px; margin-right: 12px; opacity: 1; }
 
+  /* ---------------------------------------------- the copy reveals -------- */
+  /* Every word its own inline-block so it can carry its own fade, rise and
+     blur. inline-block is what makes the transform apply at all: transforms do
+     nothing on a plain inline box. */
+  .wd { display: inline-block; opacity: 0; will-change: opacity, transform, filter; }
+  /* the scroll cue holds a rule and a label in a grid, so it fades whole */
+  .cue.wd { display: inline-grid; }
+
   @media (max-width: 1040px) {
     :root { --em: calc(var(--u) * 7px); }
     .beat-in { grid-template-columns: 1fr; justify-items: center; gap: clamp(20px, 4.5vw, 40px); }
@@ -999,7 +1007,133 @@ function render(now) {
   }
 }
 
-(function loop(now) { render(now); requestAnimationFrame(loop); })();
+/* ---------------------------------------------------- the copy reveals ----- */
+/* The same reveal as the How-it-works file: a word at a time, .065s apart, .45s
+   each, so six or seven are always in flight and the line reads as one soft
+   wave rather than a row of words switching on. Rise and blur are fractions of
+   the type size, not fixed px — the numbers that read as weight on a 16px line
+   read as a twitch on a 54px headline.
+   The curve is this reveal's own, cubic-bezier(.6, 0, .15, 1), the same one the
+   other file runs on. Nothing else here is touched: this block only adds spans
+   inside the copy and writes their opacity, offset and blur.
+
+   Latched, once, on the way down: scrolling back up neither re-runs a line nor
+   takes it away.
+   The scaffold copy latches off its own position. The beat headlines cannot —
+   they are pinned, so their rect barely moves and all six would fire the moment
+   the section arrived. They latch off their own beat's opacity instead, the
+   value render() already writes, so each pair assembles the first time its beat
+   is the one on screen. Word opacity multiplies with that beat opacity rather
+   than replacing it, so the beats keep fading exactly as they did. */
+const RV_STEP = 0.065, RV_DUR = 0.45, RV_RISE = 0.1875, RV_BLUR = 0.1, RV_TRIG = 0.85;
+const rvEase = (() => {
+  const x1 = 0.6, y1 = 0, x2 = 0.15, y2 = 1;
+  const bx = t => 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t;
+  const by = t => 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
+  const dx = t => 3 * (1 - t) * (1 - t) * x1 + 6 * (1 - t) * t * (x2 - x1) + 3 * t * t * (1 - x2);
+  return x => {
+    x = clamp(x);
+    let t = x;
+    for (let i = 0; i < 6; i++) {
+      const e = bx(t) - x, d = dx(t);
+      if (Math.abs(e) < 1e-5 || Math.abs(d) < 1e-6) break;
+      t -= e / d;
+    }
+    return by(clamp(t));
+  };
+})();
+
+function rvSplit(el) {
+  const words = [];
+  let idx = -1;
+  [...el.childNodes].forEach(nd => {
+    if (nd.nodeType === 3) {
+      const frag = document.createDocumentFragment();
+      nd.nodeValue.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+        const sp = document.createElement('span');
+        sp.className = 'wd'; sp.textContent = part;
+        /* a token with no letters in it rides in with the word before it rather
+           than fading in on its own */
+        if (/[A-Za-z0-9]/.test(part) || idx < 0) idx++;
+        words.push({ el: sp, i: idx });
+        frag.appendChild(sp);
+      });
+      nd.replaceWith(frag);
+    } else if (nd.tagName === 'BR') {
+      /* a line break is not a word: wrapped in an inline-block it stops
+         breaking the line */
+    } else {
+      const sp = document.createElement('span');
+      sp.className = 'wd';
+      nd.replaceWith(sp); sp.appendChild(nd);
+      idx++; words.push({ el: sp, i: idx });
+    }
+  });
+  return { words, n: idx + 1 };
+}
+
+function rvPaint(t, r, end) {
+  for (const w of r.words) {
+    const p = end ? 1 : rvEase((t - w.i * RV_STEP) / RV_DUR);
+    const st = w.el.style;
+    st.opacity = p.toFixed(3);
+    st.transform = 'translate3d(0,' + ((1 - p) * RV_RISE * r.fs).toFixed(2) + 'px,0)';
+    /* a filter only while the word is arriving: landed and not-yet-started
+       words carry none, and so no layer */
+    st.filter = (p <= 0.002 || p > 0.995) ? 'none'
+      : 'blur(' + ((1 - p) * RV_BLUR * r.fs).toFixed(2) + 'px)';
+  }
+}
+
+const REVEALS = (() => {
+  const out = [];
+  const push = (el, whole, beat) => {
+    const r = whole ? { words: [{ el, i: 0 }], n: 1 } : rvSplit(el);
+    if (whole) el.classList.add('wd');
+    r.el = el; r.beat = beat || null; r.t0 = null;
+    r.fs = parseFloat(getComputedStyle(el).fontSize);
+    out.push(r);
+  };
+  $$('.scaffold .tag').forEach(el => push(el, false));
+  $$('.scaffold p').forEach(el => push(el, false));
+  $$('.cue').forEach(el => push(el, true));
+  $$('.hl').forEach(el => push(el, false, el.closest('.beat')));
+  return out;
+})();
+let rvFirst = true;
+
+function runReveals(now) {
+  const vh = window.innerHeight;
+  for (const r of REVEALS) {
+    if (reduce) { rvPaint(0, r, true); continue; }
+    if (r.t0 === null) {
+      let go;
+      if (r.beat) {
+        /* both tests are needed: the headline's own position, or beat 1 latches
+           while it is still below the fold and has finished by the time you
+           reach it; and its beat's opacity, because all six headlines sit at
+           the same y inside the pin and only the opacity says which is up */
+        go = r.el.getBoundingClientRect().top < vh * RV_TRIG
+          && parseFloat(r.beat.style.opacity || 0) > 0.2;
+      } else {
+        const top = r.el.getBoundingClientRect().top;
+        go = top < vh * RV_TRIG || (rvFirst && top < vh);
+      }
+      if (go) r.t0 = now; else { rvPaint(-1, r, false); continue; }
+    }
+    rvPaint(now - r.t0, r, false);
+  }
+  rvFirst = false;
+}
+/* the type is clamped against the viewport, so the sizes the rise and blur are
+   fractions of have to be re-read when it changes */
+addEventListener('resize', () => {
+  REVEALS.forEach(r => { r.fs = parseFloat(getComputedStyle(r.el).fontSize); });
+});
+
+(function loop(now) { render(now); runReveals((now || 0) / 1000); requestAnimationFrame(loop); })();
 
 function jumpTo(i) {
   const abs = beatsEl.getBoundingClientRect().top + window.scrollY;
