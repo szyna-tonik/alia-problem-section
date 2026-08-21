@@ -63,15 +63,40 @@
     and it is what makes the Alia card at the end of the beat land: she is the
     first voice on screen to say there is a gap at all.
 
-    Reading across the seven: Jane is going to demo a feature nobody is building
-    (that is the card the Alia item then names, and she is the same Jane who
-    answers in the thread two beats later — the CS person is one person all the
-    way through; Ines carries the #operations card instead) · Lucas locked Q3 on revenue ·
-    Sofia's sprint is infra · Jane's north star is retention — three teams, three
-    different quarters, none of them talking · Omar reads duplicated work as
-    speed · Bea has handed over wireframes Engineering is still waiting for ·
-    Tomas is putting a date in a client deck that Design and Engineering
-    disagree about.
+    THE SHORT WAY, after the client's second note ("the texts don't always show
+    an obvious misalignment"). That note pulls against the first one: to make the
+    gap obvious somebody has to voice it, and then they look like they noticed.
+    Two moves settle it.
+
+    One. Every card is a worry about ITS OWN half. A person can be genuinely
+    anxious about their own deliverable while having no idea the other half
+    exists. Grace is scared she has nothing to demo; she does not know Tech's
+    sprint is full. Real problem, real worry, still nobody noticing.
+
+    Two. The colliding cards are NEIGHBOURS. They used to be scattered three
+    cards apart, and you only ever see two or three at once while scrolling, so
+    you never had both halves of a collision on screen together. Now:
+      1 Grace + 2 Nora     the Thursday demo against a sprint already over
+      3 Ryan + 4 Alice     two different numbers named for the same quarter
+      5 Claire + 6 Tyler + 7 Adam   a handover nobody answered, a date going to
+                           the client anyway, and two teams building the same
+                           thing
+    No card names the gap. The pair does. Tyler's line is the one that lands:
+    "going with the 14th unless someone tells me otherwise", and by then the
+    reader knows nobody will.
+
+    The card footer's #customer-success and #tech are pair 1 exactly, so the
+    payoff points back at the two cards that just went by, and beat 2 mentions
+    the same two people.
+
+    GRACE is the one who promised it, not Sam. She is card 1, where she says she
+    is walking the client through the feature on Thursday, so the Alia item has
+    to name her. It also repairs the thread: Sam opens with "Oh I wasn't aware of
+    that!", which only works if somebody else made the commitment. With Sam as
+    the promiser he was surprised by his own promise.
+
+    Names are American, per the client: their ICP is US. No em-dashes anywhere
+    in the copy, same note.
 
     The client's other option — make them Alia's messages — is in the file, on
     the "Beat 1: Alia" switch in the controls bar (or press W). Worth showing
@@ -93,8 +118,8 @@
     made the gap — faces on the left, the channels they came from pushed right in
     the same pills the drift cards use. That is the lightest possible form of
     "with the evidence attached": attribution, not a list, so it does not walk
-    back into the "too much detail in that block" note. It also names Jane and
-    John a beat before Alia @-mentions them, so beat 1 hands over to beat 2.
+    back into the "too much detail in that block" note. It also names Grace and
+    Sam a beat before Alia @-mentions them, so beat 1 hands over to beat 2.
     Geometry is the frame's own inbox-row people chips: 29px, 8px overlap, 2px of
     white so they read as a stack rather than a strip. Faces and pills share one
     flex row and one centre line — measured 0.00px apart.
@@ -111,7 +136,7 @@
       SHRINK_R .38  ·  FADE_IN .16  ·  FADE_OUT .43
 
     Then it runs in three phases across beat 1's own u:
-      0    -> .70   the feed scrolls, Tomas Lind ends up centred
+      0    -> .70   the feed scrolls, Tyler Brooks ends up centred
       .70  -> .85   the seven cards gather into the deck from frame 5757:63093
                     — front card full width at the bottom, each layer behind it
                     20px higher and 10px narrower, measured off that frame
@@ -138,14 +163,16 @@
     keeps "The misalignment" on one line.
 
     Beat 1 gets one extra move, and it is the only horizontal one in the file:
-    the two halves of the line start with only PART_GAP (26px) between them, so
+    the two halves of the line start with only PART_GAP (13px) between them, so
     they read as one sentence, and part outward as the feed climbs out of the
     bottom of the section — the words opening to let the noise through. They
     finish parting at u 0.22 and the first card reaches the middle at u 0.23, so
     they are apart just as it arrives.
-    The travel is measured off the live layout, not hard-coded: 291px each at
-    1481, 206px at 1065, and it collapses to nothing rather than letting the two
-    halves cross on a narrow screen.
+    13px is about one word space at this size, so the two halves genuinely read
+    as one sentence before they part.
+    The travel is measured off the live layout, not hard-coded, so it adapts to
+    the viewport and collapses to nothing rather than letting the two halves
+    cross on a narrow screen.
 
   BEATS 2 AND 3 · THE SLACK CARD, from frame 5807:66900
     Both Slack panels are now the real component, rebuilt 1:1 off that frame:
@@ -168,7 +195,7 @@
     full opacity straight through the handover instead of cross-fading with
     itself. Measured across p 1.4 to 2.75: opacity 1 the whole way.
     When beat 3 comes in, the replies open underneath Alia's question the way a
-    Slack thread fills in — the divider, then John, then Jane — and the card's
+    Slack thread fills in: the divider, then Sam, then Grace, and the card's
     height follows each one as it lands rather than opening a hole and waiting.
     192 -> 234 -> 327 -> 387 -> 426, monotonic, no overshoot. The card never
     moves, so the headlines travel around it.
@@ -239,18 +266,19 @@
   ------------------------------------
   Beat 1  seven Slack notifications scroll past; the inbox item comes to rest
   Beat 2  Alia posts in CS-tech, naming the two people who can settle it
-  Beat 3  John 9:34, then Jane 9:41. Alia is not in the room for the close.
+  Beat 3  Sam 9:34, then Grace 9:41. Alia is not in the room for the close.
 
-  "Yes, of course! We need to get this shipped asap." is Jane's line at 9:41.
-  John's is 9:34. Alia's question is the frame's wording, not the brief's
-  shorter rewrite — see the comment beside it if you want to swap that.
+  "Yes, of course! We need to get this shipped asap." is Grace's line at 9:41.
+  Sam's is 9:34. Alia's question is the frame's wording, not the brief's
+  shorter rewrite; see the comment beside it if you want to swap that.
 
   STILL OPEN IN FIGMA
   · The Coordination Inbox log is dated Wed Aug 12 / Thu Aug 13 / Tue Aug 13:
-    John answers before Jane asks and Alia resolves it the day before. The
+    the second reply lands before the first asks, and Alia resolves it the day
+    before. The
     thread's 9:20 / 9:34 / 9:41 is the version that holds together.
-  · The thread calls them "John" and "Jane"; the inbox calls them "John
-    Baptista" and "Jane Okafor". This uses the full names.
+  · The frame's thread uses first names where its inbox uses full ones. This
+    uses the full names.
 ================================================================================
 -->
 
@@ -423,9 +451,6 @@
             padding-inline: calc(24 * var(--px)); gap: calc(18 * var(--px)); }
   .s-slk { width: calc(24 * var(--px)); height: calc(24 * var(--px)); display: block; flex: none; }
   .s-room { font-weight: 700; font-size: calc(20 * var(--px)); line-height: 1.2; }
-  .s-meta { margin-left: auto; font-weight: 400; font-size: calc(12 * var(--px));
-            color: rgba(255, 255, 255, .62); white-space: nowrap; }
-  .s-meta i { font-style: normal; margin: 0 calc(7 * var(--px)); }
   .s-body { padding: calc(22 * var(--px)) calc(24 * var(--px)) calc(29 * var(--px)); }
   .s-msg { display: flex; align-items: flex-start; gap: calc(16 * var(--px)); will-change: opacity; }
   .s-av { width: calc(40 * var(--px)); height: calc(40 * var(--px)); flex: none;
@@ -514,7 +539,7 @@
   <div id="pin">
 
     <!-- =========================== BEAT 1 =========================== -->
-    <section class="beat" data-beat="0" aria-label="Beat 1 — noticed">
+    <section class="beat" data-beat="0" aria-label="Beat 1, noticed">
       <div class="beat-in">
         <h2 class="hl l">The misalignment</h2>
         <div class="stage">
@@ -527,76 +552,76 @@
             <span class="av v-people"><img src="data:image/jpeg;base64,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" alt=""></span>
             <span class="av alia v-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.4" fill="var(--ink)"/><g stroke="var(--alia-tile)" stroke-width="2.7"><path d="M0 12 H 23"/><path d="M1 3.6 L 23 12"/><path d="M1 20.4 L 23 12"/></g></svg></span>
             <div>
-              <div class="who v-people"><span class="nm">Jane Okafor</span><span class="chip">#customer-success</span></div>
+              <div class="who v-people"><span class="nm">Grace Kim</span><span class="chip">#customer-success</span></div>
               <div class="who v-alia"><span class="nm">Alia</span><span class="chip app">app</span></div>
-              <p class="body v-people">Client call is Thursday. John said the new feature would be ready by then, so I'll demo it live.</p>
-              <p class="body v-alia">Customer Success is demoing a new feature on Thursday's client call. John promised it, and there is no sign of it on any sprint in Tech.</p>
-            </div>
-          </article>
-          <article class="note card">
-            <span class="av v-people"><img src="data:image/jpeg;base64,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" alt=""></span>
-            <span class="av alia v-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.4" fill="var(--ink)"/><g stroke="var(--alia-tile)" stroke-width="2.7"><path d="M0 12 H 23"/><path d="M1 3.6 L 23 12"/><path d="M1 20.4 L 23 12"/></g></svg></span>
-            <div>
-              <div class="who v-people"><span class="nm">Lucas Meyer</span><span class="chip"><span class="lockwrap"><svg class="lock" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.35 5.2V3.5a2.65 2.65 0 0 1 5.3 0v1.7" fill="none" stroke="currentColor" stroke-width="1.15"/><rect x=".9" y="5.1" width="8.2" height="6.1" rx="1.2" fill="currentColor"/></svg></span>Private channel</span></div>
-              <div class="who v-alia"><span class="nm">Alia</span><span class="chip app">app</span></div>
-              <p class="body v-people">Q3 is locked on revenue growth. Anything that isn't moving that number can wait until October.</p>
-              <p class="body v-alia">Leadership locked Q3 on revenue growth a month ago. Two teams have since planned their quarter around something else.</p>
-            </div>
-          </article>
-          <article class="note card">
-            <span class="av v-people"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAcFBQYFBAcGBgYIBwcICxILCwoKCxYPEA0SGhYbGhkWGRgcICgiHB4mHhgZIzAkJiorLS4tGyIyNTEsNSgsLSz/2wBDAQcICAsJCxULCxUsHRkdLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCz/wAARCABYAFgDASIAAhEBAxEB/8QAHAAAAQQDAQAAAAAAAAAAAAAAAAEFBgcCBAgD/8QANBAAAQMDAgMGBAUFAQAAAAAAAQACAwQFEQYSITFBBxNRYXGBIjJSoRQVI0KRJENiwdGx/8QAGwEAAQUBAQAAAAAAAAAAAAAAAAEDBAUGAgf/xAAjEQADAAICAgICAwAAAAAAAAAAAQIDEQQxEiEFE0FRYXGh/9oADAMBAAIRAxEAPwCaBKkHJC1pKBCFXfafrk2Ok/KbbMW3CYfqyMODAz16OP2HsmsuWcUuqBvRI77reyWGR0NRUiWqaOMEPxOHr4e6jLO2W2CfZNbKqNvRwkafsqgpRPI0zbu8BOXeJ91jUAiYytLS0c8f9VJfPyt7n0hvyZ0JZdeWG+NAhq/w8xO3uZxtdn/wqSDBXKsdbPGze0kujOQ8Ow9vv1Vw9m/aHDdIKeyV+8VzBsikJyJR0B8Dj+cKZxub9j8MnYqospIjKFaHYIQhAAEYQEdUAGMrm7WUFZfdaXuelpnSMgncxwiaTgNO3P2XSXUHzVS2GkqKW66lqo3Ng3V74u9cMhjQ4lxA8eIVP8rbjGn/ACLMedKSBWbTV0roswW2pkHLhG45W9LoHU8Mckgs1U2M8z3eBjz6qfU16kp6+L8t1XVSSDG6nc1paRw8OXP7qfX7UlTbLBFUMLHTygAbh1WbrPSZJnjS0c90uhL5Vux3DoyeGXBNctFctPX0wPLoqqEja5rsY48wQrjbftTvaampmtVTG45bEMsfjwzyUC1y8116oJGRua6piDQDzDt2MJ3Fkt1pjObFEzud7L5p934WHfxdsbn1wvULCFhjgjYebGhp9hhei2y6GxEJUIAQIQEqUDFwy0jyTfabRTvlrInQtxJKXSNx8ziBk+/NODs7TjmtKmndT3KYN3AuO4B3Dosz84q3L169kzjaMLnarPZac1lW6KmjjHFzzwaPTr6LRutysd3fT0NPVxTSNZvMbnAEt6kA88LYq7zb6yQQ1ZbujduLXA7gR1AWhWvsdZVMkY+IuHzBhDCf+rPJetsnf10JJ2e2+apdVvJY8kEvYNrnepHNMN109BPq20zZBjoJN3dgZMh3DA8hniVNpL5E6gc6J+Wtao5bXGtuolc07mvBa7HXHEfxxT+Cq80xjJM61omfXxQhC9AKwEIQkARKkSpQETRdnClrKeozhsh2H1HJO6adRQCot7GH6/8ARVd8lCvjXsdxNq1o3HxOqGtlZEHSAcD1TRX24VgDa+lEkY/aRwTTBquusVOIqymdPAPlmj4uA8CFrVvaCathjoqWSV7hgFzcALFqKS9Fj9y1o9bxcoKSIUsETImABrWNGB5BSawUcUVqppTEzv3My5+OJyT1UMtFnmnmNfXHc/mB0apfR3SOhudHY6rEdVNTd/Fx54cQW48QMHz4+Cufh/FZWn+v92Q+RXW/yPKVIOKVasighCEAIEqTIAJJwBxJ8FDNS9ptnsbXw0jhcqwcNkTv02n/ACf/AKGVzdzC3TEbS7JhNNFTwulmkZFGwZc97g0D1JUUut9juEVsqqR+6jfWSxNeOUgazG703Zx6Kob1qq66jqBJXVDpDuxFTxjEcfo3x8zkqyKR1DUaWt1poHvkqdPyMFZlmAS4ne5p6gOcR7Kn5mf7cVTK9HEZd2khzlgMjXwuYHtJ4eSKKxxd9uLAAOPJODKWXuWvA+XgT0wn7TYoJC8ids1Uzj3ZBAA+oZ+ZZvFgvM9T0WWTNOJboyt1pZTNbNOA3HFjD0/yKoDWupH3jXFRcqSZ7I4HiOme04Ia08HA+ZyfdXD2s6i/I9LOpoZMVlxJiaQeIZ+938cPdc+bfiz0V5jxThlRJTZMtZa8qLk0n2mUddSx017kbS1g+HviMRyeZ+k/ZT2ORksbZI3texwy1zTkH0K5dMgMuWOBwMcE9WPVl2sMgNDVuYwn4onfEx3q08FY4+W16o6nK16Z0V0Qq9sXatR1hbFdaf8ACPPDvY8uZ7jmPuhTJzQ1vY+rl/krnUWuLzqOSRs1S6Kkc4ltNGdrAOgP1e6jpQhUlU6e2Q22+zas8cs95pGQgGV0zA3PLO4LoW06Lis9ue2le41Dxue8/wBw5yQR1BQhOY+hBxZHSih7qp70AuBbG3m7yW1DZTIRUhpp5BxiDTxZ5k+KELucc458Z6CrdvyoobtB1DLqLVc8hlEkFL/TwlvAODTxcB5nJ/hRRzWuBDhnyQhNMQQAbeA4JMIQkAza4tQhCUD/2Q==" alt=""></span>
-            <span class="av alia v-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.4" fill="var(--ink)"/><g stroke="var(--alia-tile)" stroke-width="2.7"><path d="M0 12 H 23"/><path d="M1 3.6 L 23 12"/><path d="M1 20.4 L 23 12"/></g></svg></span>
-            <div>
-              <div class="who v-people"><span class="nm">Omar Haddad</span><span class="chip">#leadership</span></div>
-              <div class="who v-alia"><span class="nm">Alia</span><span class="chip app">app</span></div>
-              <p class="body v-people">Good news — CRM and Growth are both building the new onboarding flow. We should get there twice as fast.</p>
-              <p class="body v-alia">CRM and Growth are both building the new onboarding flow. Neither has mentioned the other, and neither has been told to stop.</p>
-            </div>
-          </article>
-          <article class="note card">
-            <span class="av v-people"><img src="data:image/jpeg;base64,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" alt=""></span>
-            <span class="av alia v-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.4" fill="var(--ink)"/><g stroke="var(--alia-tile)" stroke-width="2.7"><path d="M0 12 H 23"/><path d="M1 3.6 L 23 12"/><path d="M1 20.4 L 23 12"/></g></svg></span>
-            <div>
-              <div class="who v-people"><span class="nm">Bea Novak</span><span class="chip">#design</span></div>
-              <div class="who v-alia"><span class="nm">Alia</span><span class="chip app">app</span></div>
-              <p class="body v-people">Wireframes are done and handed over. I'm on the pricing page for the rest of the week.</p>
-              <p class="body v-alia">Design handed the wireframes over a week ago and moved on. Engineering is still waiting on them and hasn't said so.</p>
+              <p class="body v-people">The client demo is Thursday and I still haven't seen the feature. Am I safe to walk them through it?</p>
+              <p class="body v-alia">Customer Success is walking the client through this feature on Thursday. It is not on any sprint in Tech, and nobody has connected the two.</p>
             </div>
           </article>
           <article class="note card">
             <span class="av v-people"><img src="data:image/jpeg;base64,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" alt=""></span>
             <span class="av alia v-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.4" fill="var(--ink)"/><g stroke="var(--alia-tile)" stroke-width="2.7"><path d="M0 12 H 23"/><path d="M1 3.6 L 23 12"/><path d="M1 20.4 L 23 12"/></g></svg></span>
             <div>
-              <div class="who v-people"><span class="nm">Sofia Ruiz</span><span class="chip">#tech</span></div>
+              <div class="who v-people"><span class="nm">Nora Vega</span><span class="chip">#tech</span></div>
               <div class="who v-alia"><span class="nm">Alia</span><span class="chip app">app</span></div>
-              <p class="body v-people">Sprint is set: infra cost reduction. Nothing else is going in this cycle.</p>
-              <p class="body v-alia">The sprint was set on infra cost reduction. Neither of the two priorities leadership named this quarter is in it.</p>
+              <p class="body v-people">Sprint is already over capacity and two more things landed today. Something is going to slip, I just don't know what yet.</p>
+              <p class="body v-alia">Tech's sprint went over capacity today. The Thursday client demo depends on it and is not in it.</p>
+            </div>
+          </article>
+          <article class="note card">
+            <span class="av v-people"><img src="data:image/jpeg;base64,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" alt=""></span>
+            <span class="av alia v-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.4" fill="var(--ink)"/><g stroke="var(--alia-tile)" stroke-width="2.7"><path d="M0 12 H 23"/><path d="M1 3.6 L 23 12"/><path d="M1 20.4 L 23 12"/></g></svg></span>
+            <div>
+              <div class="who v-people"><span class="nm">Ryan Cole</span><span class="chip"><span class="lockwrap"><svg class="lock" viewBox="0 0 10 12" aria-hidden="true"><path d="M2.35 5.2V3.5a2.65 2.65 0 0 1 5.3 0v1.7" fill="none" stroke="currentColor" stroke-width="1.15"/><rect x=".9" y="5.1" width="8.2" height="6.1" rx="1.2" fill="currentColor"/></svg></span>Private channel</span></div>
+              <div class="who v-alia"><span class="nm">Alia</span><span class="chip app">app</span></div>
+              <p class="body v-people">We said Q3 is revenue and nothing else. I keep seeing work that doesn't move that number and I can't tell where it's coming from.</p>
+              <p class="body v-alia">Leadership locked Q3 on revenue. Work is landing that does not move that number, and nobody has traced where it comes from.</p>
             </div>
           </article>
           <article class="note card">
             <span class="av v-people"><img src="data:image/jpeg;base64,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" alt=""></span>
             <span class="av alia v-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.4" fill="var(--ink)"/><g stroke="var(--alia-tile)" stroke-width="2.7"><path d="M0 12 H 23"/><path d="M1 3.6 L 23 12"/><path d="M1 20.4 L 23 12"/></g></svg></span>
             <div>
-              <div class="who v-people"><span class="nm">Ines Duarte</span><span class="chip">#operations</span></div>
+              <div class="who v-people"><span class="nm">Alice Tan</span><span class="chip">#operations</span></div>
               <div class="who v-alia"><span class="nm">Alia</span><span class="chip app">app</span></div>
-              <p class="body v-people">North star this quarter is customer retention. I'm keeping the team pointed at that.</p>
-              <p class="body v-alia">Operations is pointing the team at retention. Tech's sprint and leadership's Q3 goal are pointed somewhere else.</p>
+              <p class="body v-people">Retention is the one number I'm accountable for this quarter. I need the team staying on it and not getting pulled elsewhere.</p>
+              <p class="body v-alia">Operations is holding the team on retention. That is not the number leadership named for Q3.</p>
+            </div>
+          </article>
+          <article class="note card">
+            <span class="av v-people"><img src="data:image/jpeg;base64,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" alt=""></span>
+            <span class="av alia v-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.4" fill="var(--ink)"/><g stroke="var(--alia-tile)" stroke-width="2.7"><path d="M0 12 H 23"/><path d="M1 3.6 L 23 12"/><path d="M1 20.4 L 23 12"/></g></svg></span>
+            <div>
+              <div class="who v-people"><span class="nm">Claire Bishop</span><span class="chip">#design</span></div>
+              <div class="who v-alia"><span class="nm">Alia</span><span class="chip app">app</span></div>
+              <p class="body v-people">I handed the onboarding wireframes over a week ago and haven't heard anything back. Should I assume they're being built?</p>
+              <p class="body v-alia">Design handed the onboarding wireframes over a week ago and heard nothing. Engineering has not picked them up.</p>
             </div>
           </article>
           <article class="note card">
             <span class="av v-people"><img src="data:image/jpeg;base64,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" alt=""></span>
             <span class="av alia v-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.4" fill="var(--ink)"/><g stroke="var(--alia-tile)" stroke-width="2.7"><path d="M0 12 H 23"/><path d="M1 3.6 L 23 12"/><path d="M1 20.4 L 23 12"/></g></svg></span>
             <div>
-              <div class="who v-people"><span class="nm">Tomas Lind</span><span class="chip">#onboarding-launch</span></div>
+              <div class="who v-people"><span class="nm">Tyler Brooks</span><span class="chip">#onboarding-launch</span></div>
               <div class="who v-alia"><span class="nm">Alia</span><span class="chip app">app</span></div>
-              <p class="body v-people">Onboarding ships on the 14th. Putting the date in the client deck now.</p>
-              <p class="body v-alia">Onboarding is going into the client deck for the 14th. Design and Engineering are working to two different dates.</p>
+              <p class="body v-people">I have to give the client an onboarding date today. Going with the 14th unless someone tells me otherwise.</p>
+              <p class="body v-alia">An onboarding date is going to the client today. Design and Engineering are working to two different ones.</p>
+            </div>
+          </article>
+          <article class="note card">
+            <span class="av v-people"><img src="data:image/jpeg;base64,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" alt=""></span>
+            <span class="av alia v-alia"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.4" fill="var(--ink)"/><g stroke="var(--alia-tile)" stroke-width="2.7"><path d="M0 12 H 23"/><path d="M1 3.6 L 23 12"/><path d="M1 20.4 L 23 12"/></g></svg></span>
+            <div>
+              <div class="who v-people"><span class="nm">Adam Costa</span><span class="chip">#leadership</span></div>
+              <div class="who v-alia"><span class="nm">Alia</span><span class="chip app">app</span></div>
+              <p class="body v-people">Both CRM and Growth showed me onboarding work this week. Either I'm confusing myself or we're paying for it twice.</p>
+              <p class="body v-alia">CRM and Growth are both building onboarding. Neither has been told about the other.</p>
             </div>
           </article>
           </div>
           <article class="item card emerge" data-role="item">
             <span class="chip violet">Misalignment</span>
-            <p class="body">John promised a new feature to the client. We have a call with them soon but there is no sign of the feature in Tech.</p>
+            <p class="body">Grace promised a new feature to the client. We have a call with them soon but there is no sign of the feature in Tech.</p>
             <!-- the two people whose messages made the gap — the lightest form
                  of "with the evidence attached": attribution, not a list. They
                  are also the two Alia names in the thread a beat later. -->
@@ -615,7 +640,7 @@
     </section>
 
     <!-- =========================== BEAT 2 =========================== -->
-    <section class="beat" data-beat="1" aria-label="Beat 2 — nudged">
+    <section class="beat" data-beat="1" aria-label="Beat 2, nudged">
       <div class="beat-in">
         <h2 class="hl l">Alia noticed.</h2>
         <div class="stage">
@@ -626,7 +651,7 @@
     </section>
 
     <!-- =========================== BEAT 3 =========================== -->
-    <section class="beat" data-beat="2" aria-label="Beat 3 — settled">
+    <section class="beat" data-beat="2" aria-label="Beat 3, settled">
       <div class="beat-in">
         <h2 class="hl l">Two replies.</h2>
         <!-- the artefact for this beat is the shared Slack card in .tlayer,
@@ -646,7 +671,7 @@
         <span></span>
         <div class="stage">
           <article class="slack">
-            <header class="s-head"><svg class="s-slk" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5.04227 15.1662C5.04227 16.5538 3.90874 17.6873 2.52114 17.6873C1.13353 17.6873 0 16.5538 0 15.1662C0 13.7786 1.13353 12.645 2.52114 12.645H5.04227V15.1662Z" fill="#E01E5A"/><path d="M6.31262 15.1662C6.31262 13.7786 7.44616 12.645 8.83376 12.645C10.2214 12.645 11.3549 13.7786 11.3549 15.1662V21.4788C11.3549 22.8664 10.2214 23.9999 8.83376 23.9999C7.44616 23.9999 6.31262 22.8664 6.31262 21.4788V15.1662Z" fill="#E01E5A"/><path d="M8.83376 5.04227C7.44616 5.04227 6.31262 3.90874 6.31262 2.52114C6.31262 1.13353 7.44616 0 8.83376 0C10.2214 0 11.3549 1.13353 11.3549 2.52114V5.04227H8.83376Z" fill="#36C5F0"/><path d="M8.83375 6.31299C10.2213 6.31299 11.3549 7.44652 11.3549 8.83412C11.3549 10.2217 10.2213 11.3553 8.83375 11.3553H2.52114C1.13353 11.3553 0 10.2217 0 8.83412C0 7.44652 1.13353 6.31299 2.52114 6.31299H8.83375Z" fill="#36C5F0"/><path d="M18.9574 8.83412C18.9574 7.44652 20.0909 6.31299 21.4785 6.31299C22.8661 6.31299 23.9997 7.44652 23.9997 8.83412C23.9997 10.2217 22.8661 11.3553 21.4785 11.3553H18.9574V8.83412Z" fill="#2EB67D"/><path d="M17.687 8.83375C17.687 10.2213 16.5535 11.3549 15.1659 11.3549C13.7783 11.3549 12.6448 10.2213 12.6448 8.83375V2.52114C12.6448 1.13353 13.7783 0 15.1659 0C16.5535 0 17.687 1.13353 17.687 2.52114V8.83375Z" fill="#2EB67D"/><path d="M15.1659 18.958C16.5535 18.958 17.687 20.0915 17.687 21.4791C17.687 22.8667 16.5535 24.0003 15.1659 24.0003C13.7783 24.0003 12.6448 22.8667 12.6448 21.4791V18.958H15.1659Z" fill="#ECB22E"/><path d="M15.1659 17.6873C13.7783 17.6873 12.6448 16.5538 12.6448 15.1662C12.6448 13.7786 13.7783 12.645 15.1659 12.645H21.4785C22.8661 12.645 23.9997 13.7786 23.9997 15.1662C23.9997 16.5538 22.8661 17.6873 21.4785 17.6873H15.1659Z" fill="#ECB22E"/></svg><span class="s-room">CS-tech</span><span class="s-meta">Group DM<i>•</i>3 people</span></header>
+            <header class="s-head"><svg class="s-slk" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5.04227 15.1662C5.04227 16.5538 3.90874 17.6873 2.52114 17.6873C1.13353 17.6873 0 16.5538 0 15.1662C0 13.7786 1.13353 12.645 2.52114 12.645H5.04227V15.1662Z" fill="#E01E5A"/><path d="M6.31262 15.1662C6.31262 13.7786 7.44616 12.645 8.83376 12.645C10.2214 12.645 11.3549 13.7786 11.3549 15.1662V21.4788C11.3549 22.8664 10.2214 23.9999 8.83376 23.9999C7.44616 23.9999 6.31262 22.8664 6.31262 21.4788V15.1662Z" fill="#E01E5A"/><path d="M8.83376 5.04227C7.44616 5.04227 6.31262 3.90874 6.31262 2.52114C6.31262 1.13353 7.44616 0 8.83376 0C10.2214 0 11.3549 1.13353 11.3549 2.52114V5.04227H8.83376Z" fill="#36C5F0"/><path d="M8.83375 6.31299C10.2213 6.31299 11.3549 7.44652 11.3549 8.83412C11.3549 10.2217 10.2213 11.3553 8.83375 11.3553H2.52114C1.13353 11.3553 0 10.2217 0 8.83412C0 7.44652 1.13353 6.31299 2.52114 6.31299H8.83375Z" fill="#36C5F0"/><path d="M18.9574 8.83412C18.9574 7.44652 20.0909 6.31299 21.4785 6.31299C22.8661 6.31299 23.9997 7.44652 23.9997 8.83412C23.9997 10.2217 22.8661 11.3553 21.4785 11.3553H18.9574V8.83412Z" fill="#2EB67D"/><path d="M17.687 8.83375C17.687 10.2213 16.5535 11.3549 15.1659 11.3549C13.7783 11.3549 12.6448 10.2213 12.6448 8.83375V2.52114C12.6448 1.13353 13.7783 0 15.1659 0C16.5535 0 17.687 1.13353 17.687 2.52114V8.83375Z" fill="#2EB67D"/><path d="M15.1659 18.958C16.5535 18.958 17.687 20.0915 17.687 21.4791C17.687 22.8667 16.5535 24.0003 15.1659 24.0003C13.7783 24.0003 12.6448 22.8667 12.6448 21.4791V18.958H15.1659Z" fill="#ECB22E"/><path d="M15.1659 17.6873C13.7783 17.6873 12.6448 16.5538 12.6448 15.1662C12.6448 13.7786 13.7783 12.645 15.1659 12.645H21.4785C22.8661 12.645 23.9997 13.7786 23.9997 15.1662C23.9997 16.5538 22.8661 17.6873 21.4785 17.6873H15.1659Z" fill="#ECB22E"/></svg><span class="s-room">CS-tech</span></header>
             <div class="s-body">
               <div class="s-msg">
                 <span class="s-av alia"><svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M17.9184 9.97513C17.4321 14.487 13.6099 18 8.96667 18C7.45635 18 6.03294 17.6282 4.78289 16.9714C7.42264 16.5175 8.91425 14.7324 10.2085 13.2059C11.6691 11.4834 12.8817 10.089 15.2185 9.97513H17.9184Z" fill="#1D1D1D"/><path d="M10.7727 9.97513C10.0311 10.6212 9.4135 11.3583 8.83419 12.0415C7.3147 13.8336 6.04192 15.2799 3.46073 15.2799H2.51678C1.14939 13.877 0.236384 12.0296 0.0149223 9.97513H10.7727Z" fill="#1D1D1D"/><path d="M8.96667 0C13.6611 2.05103e-07 17.5163 3.59077 17.9333 8.17435H15.5316V8.16679L15.5315 8.16672C12.9823 8.16671 11.7273 6.7419 10.2049 4.9691C8.85775 3.40042 7.29965 1.55969 4.46372 1.20463C5.78832 0.438536 7.32624 1.74317e-06 8.96667 0Z" fill="#1D1D1D"/><path d="M3.46067 2.94445C6.04675 2.94446 7.32021 4.37502 8.83771 6.14208C9.4151 6.81442 10.0301 7.53871 10.767 8.17435H0C0.182536 6.16828 1.02357 4.35238 2.3054 2.94445H3.46067Z" fill="#1D1D1D"/></svg></span>
@@ -655,7 +680,7 @@
                   <!-- the frame's wording. the brief's shorter rewrite was "The client
                        was promised this feature by next week. Where does it stand?" —
                        better line, but it has to change in section 02 as well. -->
-                  <p class="s-say">Hello <span class="mn" data-chip="0">@Jane (CS)</span> and <span class="mn" data-chip="1">@John (Tech)</span>. The new feature was promised to the client to be ready by next week, how is the progress on that?</p>
+                  <p class="s-say">Hello <span class="mn" data-chip="0">@Grace (CS)</span> and <span class="mn" data-chip="1">@Sam (Tech)</span>. The new feature was promised to the client to be ready by next week, how is the progress on that?</p>
                 </div>
               </div>
               <div class="s-thread" data-role="s-thread">
@@ -663,15 +688,15 @@
                 <div class="s-msg" data-role="reply-1">
                   <span class="s-av"><img src="data:image/jpeg;base64,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" alt=""></span>
                   <div>
-                    <div class="s-hd"><span class="s-who">John Baptista</span><span class="s-ts">Thu 9:34</span></div>
-                    <p class="s-say">Oh I wasn't aware of that! <span class="mn">@Jane (CS)</span> could you give me more context of what's needed for this feature? I can organize my team to deliver it.</p>
+                    <div class="s-hd"><span class="s-who">Sam Patel</span><span class="s-ts">Thu 9:34</span></div>
+                    <p class="s-say">Oh I wasn't aware of that! <span class="mn">@Grace (CS)</span> could you give me more context of what's needed for this feature? I can organize my team to deliver it.</p>
                   </div>
                 </div>
                 <div class="s-rule"></div>
                 <div class="s-msg" data-role="reply-2">
                   <span class="s-av"><img src="data:image/jpeg;base64,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" alt=""></span>
                   <div>
-                    <div class="s-hd"><span class="s-who">Jane Okafor</span><span class="s-ts">Thu 9:41</span></div>
+                    <div class="s-hd"><span class="s-who">Grace Kim</span><span class="s-ts">Thu 9:41</span></div>
                     <p class="s-say">Yes, of course! We need to get this shipped asap.</p>
                   </div>
                 </div>
@@ -735,7 +760,7 @@ const SHRINK_R = 0.38, FADE_IN = 0.16, FADE_OUT = 0.43;
    measured from the real gap at the current viewport rather than hard-coded, so
    the halves never cross on a narrow screen. They finish parting at PART_BY of
    beat 1's own u; the first card reaches the middle at ~0.23. */
-const PART_GAP = 26, PART_BY = 0.22;
+const PART_GAP = 13, PART_BY = 0.22;
 let partX = 0;
 
 /* Beat 1 runs in three phases across its own u:
@@ -776,7 +801,7 @@ const sThread = $('[data-role="s-thread"]');
 const sReplies = $$('[data-role^="reply-"]', tlayer);
 const sReps   = $('.s-reps', tlayer);
 const sChips  = $$('.mn', $('.s-msg', tlayer));
-/* the replies open in three steps — the divider, then John, then Jane — and the
+/* the replies open in three steps: the divider, then Sam, then Grace. The
    card's height follows them, so it grows as each message lands rather than
    opening a hole and waiting. stepEnd holds how tall the thread has to be to
    show everything up to and including each step. */
@@ -798,7 +823,7 @@ function applyConfig() {
     const keep = sThread.style.height;
     sThread.style.height = 'auto';
     threadH = sThread.offsetHeight;
-    const kids = sThread.children;      /* 2 replies · John · rule · Jane */
+    const kids = sThread.children;      /* 2 replies, first reply, rule, second */
     stepEnd = [kids[1] ? kids[1].offsetTop : 0,
                kids[2] ? kids[2].offsetTop : 0,
                threadH];
@@ -927,13 +952,13 @@ function render() {
     /* beat 3 opens the replies underneath, the way a thread fills in */
     const u3 = reduce ? 1 : clamp((p - 2 + 0.5) / 0.48);
     const pDiv  = smooth(clamp((u3 - 0.06) / 0.26));
-    const pJohn = smooth(clamp((u3 - 0.24) / 0.30));
-    const pJane = smooth(clamp((u3 - 0.50) / 0.30));
+    const pFirst = smooth(clamp((u3 - 0.24) / 0.30));
+    const pSecond = smooth(clamp((u3 - 0.50) / 0.30));
     sThread.style.height = (stepEnd[0] * pDiv +
-                            (stepEnd[1] - stepEnd[0]) * pJohn +
-                            (stepEnd[2] - stepEnd[1]) * pJane).toFixed(1) + 'px';
+                            (stepEnd[1] - stepEnd[0]) * pFirst +
+                            (stepEnd[2] - stepEnd[1]) * pSecond).toFixed(1) + 'px';
     sReps.style.opacity = pDiv.toFixed(3);
-    [pJohn, pJane].forEach((a, k) => {
+    [pFirst, pSecond].forEach((a, k) => {
       const m = sReplies[k]; if (!m) return;
       m.style.opacity = a.toFixed(3);
       m.style.transform = 'translate3d(0,' + ((1 - a) * 0.5 * EM).toFixed(1) + 'px,0)';
